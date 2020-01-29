@@ -1,0 +1,47 @@
+<launch>
+   
+   <node name="moveSawyer" pkg="ping_pong" type="moveSawyer">
+   </node>
+	
+   <node name="processCloud" pkg="ping_pong" type="processCloud">
+   </node>
+
+   <node name="joint_trajectory_action_server" pkg="intera_interface" type="joint_trajectory_action_server.py" output="log"/>
+
+   <include file = "$(find nodelet_pcl_demo)/launch/nodelet_table_extraction.launch">
+        <arg name= "source" value = "realsense" />
+         
+	<!-- arg name = "filters" value = "pointcloud" / -->
+	
+   </include>
+	
+	
+   <!-- include file = "$(find realsense2_camera)/launch/rs_camera.launch" -->
+   	 <!-- arg name= "align_depth" value = "true" / -->
+	 <!-- arg name = "filters" value = "pointcloud" / -->
+   <!-- /include -->	
+  	
+   <include file = "$(find sawyer_moveit_config)/launch/sawyer_moveit.launch" >
+   </include>	
+
+
+
+
+
+
+
+   <!-- include file = "$(find sawyer_moveit_config)/launch/move_group.launch" / -->
+	
+   <!-- include file="$(find sawyer_moveit_config)/launch/move_group.launch" -->
+    <!-- arg name="kinect" value="$(arg kinect)" / -->
+    <!-- arg name="xtion" value="$(arg xtion)" / -->
+    <!-- arg name="camera_link_pose" default="$(arg camera_link_pose)"/ -->
+    <!-- arg name="allow_trajectory_execution" value="true"/ -->
+  <!-- /include -->
+
+   <!-- include file = "$(find sawyer_moveit_config)/launch/planning_context.launch" -->
+	<!-- arg name="load_robot_description" value="true"/ -->
+   <!-- /include -->
+
+</launch>
+

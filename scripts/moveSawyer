@@ -1,0 +1,210 @@
+#!/usr/bin/env python
+""" 
+Publishes 
+PUBLISHERS:
+
+SERVICES:
+
+"""
+
+import pyrealsense2 as rs
+# Import Numpy for easy array manipulation
+import numpy as np
+# Import OpenCV for easy image rendering
+import cv2
+import numpy
+from process_image import *
+import rospy
+#from geometry_msgs.msg import Twist, Vector3
+from random import uniform
+import intera_interface
+import moveit_commander
+import sys
+import copy
+import moveit_msgs.msg
+import geometry_msgs.msg
+from math import pi
+from std_msgs.msg import String
+from moveit_commander.conversions import pose_to_list
+import time
+import intera_interface
+from sensor_msgs.msg import Image, CameraInfo
+from cv_bridge import CvBridge, CvBridgeError
+
+
+
+class moveSawyer():
+    def __init__(self):
+        self.name = "Sawyer"
+
+        self.depthImage = None
+        self.intrinsics = None
+
+        #moveit_commander.roscpp_initialize(sys.argv)
+        rospy.init_node('move_group_python_interface_tutorial', anonymous = True)
+        
+        self.bridge = CvBridge()
+
+        # Initialize the subscriber to publish the velocities
+        self.pub = rospy.Publisher('/ball_velocity', Vector3, queue_size = 1) 
+    
+
+    def plan(self):
+
+        pass
+        
+
+
+    def processImage_callback(self, color_image):
+
+                cv_image = self.bridge.imgmsg_to_cv2(color_image, desired_encoding = "passthrough")
+                hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+
+                # myString = """
+                # define range of yellow color in HSV
+                lower_yellow_range = np.array( [20, 22, 115] )
+                upper_yellow_range = np.array( [40, 150, 254] )
+
+                # Threshold the HSV image to get only yellow colors
+                color_image = cv2.inRange(hsv, lower_yellow_range, upper_yellow_range)
+
+                kernel = kernel = np.ones( (5,5), np.uint8)
+                color_image = cv2.morphologyEx(color_image, cv2.MORPH_OPEN, kernel)
+                ignore2, contours, ignore1 = cv2.findContours(color_image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+                frame = color_image
+                #res = cv2.bitwise_and(frame, frame, mask = mask)
+                    # cv2.imshow('frame',frame)
+                    # cv2.imshow('res', res)
+
+                # Perform MORPHOLOICAL OPENING!!!!
+                # PERFORM MORPHOLICAL OPENING!!!!
+
+                # Blank image - just draw the largest contour
+                # cv2.drawContours(color_image, contours, -1, (255,255,0), 3)
+
+                color_image = np.zeros( ( len(color_image), len(color_image[0]) )  )
+
+                indexOfLargest = -1
+                largestContour = -1
+
+                for i in range( len(contours) ):
+                    if ( (cv2.contourArea(contours[i], False) ) > largestContour):
+                        largestContour = cv2.contourArea(contours[i], False)
+                        indexOfLargest = i
+
+                if (indexOfLargest != -1):
+                    # Increment the loop count
+
+                    # print(contours)
+                    real_contour = contours[indexOfLargest]
+                    color_image = cv2.drawContours(color_image, real_contour, -1, (255,255,0), 3)
+                    kernel = kernel = np.ones((5,5), np.uint8)
+
+                    M = cv2.moments( contours[indexOfLargest] )
+
+                    try:
+                        cx = int(M['m10']/M['m00'])
+                        cy = int(M['m01']/M['m00'])
+                    except:
+                        cx = -1
+                        cy = -1
+
+
+                    # Errors below here
+                    #intrinsics = self.aligned_frames.profile.as_video_stream_profile().intrinsics
+
+                    # dpt_frame = pipe.wait_for_frames().get_depth_frame().as_depth_frame()
+                    # depth = self.depthImage.get_distance(cx, cy)
+
+                    # depth = depth_image.get_distance(50, 50)
+                    
+                    # depth = self.aligned_depth_frame.get_distance( int(cx), int(cy) )
+
+                    # What units??
+                    # print(depth)
+
+                    # NEED a pyrealsense intrinsics matrix - pyrealsense2.pyrealsense2.intrinsics
+                    # coord = rs.rs2_deproject_pixel_to_point(self.intrinsics, [ int(cx), int(cy) ], 50)
+
+                    myVelocity = Vector3()
+                    myVelocity.x = 0 # coord[0];
+                    myVelocity.y = 0 # coord[1];
+                    myVelocity.z = 0 # coord[2];
+                    self.pub.publish(myVelocity)
+
+                else:
+                    # Draw the prior contour?
+                    pass
+
+
+                #color_image = cv.dilate(color_image, kernel,iterations = 1)
+                #color_image = cv2.morphologyEx(color_image, cv2.MORPH_OPEN, kernel)
+                #color_image = cv2.morphologyEx(color_image, cv2.MORPH_CLOSE, kernel)
+                # print(indexOfLargest)
+
+
+                # Remove background - Set pixels further than clipping_distance to grey
+                #grey_color = 255
+                #depth_image_3d = np.dstack((depth_image, depth_image, depth_image)) #depth image is 1 channel, color is 3 channels
+                # bg_removed = np.where((depth_image_3d > clipping_distance) | (depth_image_3d <= 0), grey_color, color_image)
+
+                # Render images
+                #depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
+
+                 # Render images
+                #depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
+
+                # Convert the image to HSV space
+                #color_image_copy = color_image # color_image.copy()  
+                # Why does copying the image not slow it down a lot?
+
+                # Filter on the orange hue
+                    # Orange = [] - []
+                # Traverse the image and black/Null out the bad pixels
+
+                # Present the image
+                # images = np.hstack( (color_image, depth_colormap) )
+                #cv2.namedWindow('Track Tennis Ball', cv2.WINDOW_AUTOSIZE)
+                #cv2.imshow('Track Tennis Ball', color_image)
+                #key = cv2.waitKey(1)
+
+                # Press esc or 'q' to close the image window
+                #if key & 0xFF == ord('q') or key == 27:
+                #    cv2.destroyAllWindows()
+                #    break
+                
+                #"""
+                # pass
+
+def main():
+    #rospy.init_node('moveSawyer')
+    myMover = moveSawyer()
+ 
+    #myMover.moveArm()
+
+    time.sleep(20)
+    #while( True ):
+        
+        # Get two images
+        # myStream = videoStream()
+        # myStream.computeVelocity()  
+        # rospy.Subscriber("chatter", String, processImage)   
+
+        # Move the arm to that location
+    myMover.plan()
+        
+
+
+    # Get the image
+    #myStream = displayVideoStream()
+
+    print("hello")
+    
+    rospy.spin()
+
+if __name__ == '__main__':
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass

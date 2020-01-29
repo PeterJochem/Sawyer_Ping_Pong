@@ -1,0 +1,82 @@
+#!/usr/bin/env python
+""" 
+Publishes 
+PUBLISHERS:
+
+SERVICES:
+
+"""
+
+import pyrealsense2 as rs
+# Import Numpy for easy array manipulation
+import numpy as np
+# Import OpenCV for easy image rendering
+import cv2
+import numpy
+from process_image import *
+import rospy
+#from geometry_msgs.msg import Twist, Vector3
+from random import uniform
+import intera_interface
+import moveit_commander
+import sys
+import copy
+import moveit_msgs.msg
+import geometry_msgs.msg
+from math import pi
+from std_msgs.msg import String
+from moveit_commander.conversions import pose_to_list
+import time
+import intera_interface
+from sensor_msgs.msg import Image, CameraInfo, PointCloud2
+from cv_bridge import CvBridge, CvBridgeError
+
+
+class processCloud():
+
+    def __init__(self):
+        self.name = "Sawyer"
+        
+        rospy.init_node('processCloud', anonymous = True)
+        
+        self.pub = rospy.Publisher('/ball_velocity', Vector3, queue_size = 1) 
+        
+        rospy.Subscriber("/cloud_downsampler/voxel/output", PointCloud2, self.processImage_callback)
+
+
+    # This method is the callback for when we recieve new pointcloud data
+    def processImage_callback(self, data):
+            
+        # Insert Code here
+
+        myVector = Vector3()
+        myVector.x = 1
+        myVector.y = 1
+        myVector.z = 1
+            
+        self.pub.publish(myVector)
+    
+
+
+def main():
+    #rospy.init_node('moveSawyer')
+    myCloudProcessor = processCloud()
+ 
+    #myMover.moveArm()
+
+    time.sleep(2)
+        
+
+
+    # Get the image
+    #myStream = displayVideoStream()
+
+    print("hello")
+    
+    rospy.spin()
+
+if __name__ == '__main__':
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass
