@@ -1,0 +1,137 @@
+#!/usr/bin/env python
+
+
+"""
+PUBLSIHERS:
+    +
+SUBSCRIBERS:
+    +
+"""
+
+from __future__ import division
+
+import sys
+import copy
+import rospy
+import moveit_commander
+import moveit_msgs.msg
+from moveit_msgs.msg import Grasp
+import geometry_msgs.msg
+from geometry_msgs.msg import Point, Quaternion, Pose, PoseStamped
+import numpy as np
+from std_msgs.msg import String, Bool
+from moveit_commander.conversions import pose_to_list
+import baxter_interface
+from baxter_interface import Gripper, CHECK_VERSION
+from sensor_msgs.msg import Range
+import tf.transformations as tr
+from tf.transformations import quaternion_matrix
+from tf.transformations import quaternion_from_euler
+from tf.transformations import euler_from_matrix
+from std_msgs.msg import Bool
+
+
+import roslib
+# roslib.load_manifest('terminator')
+import actionlib
+from std_msgs.msg import Bool
+
+
+class LeftArm(object):
+    """ manipulates baxters left arm """
+
+    def __init__(self):
+
+        rospy.loginfo("Initializing Baxter")
+        super(LeftArm, self).__init__()
+
+        #joint_state_topic = ['joint_states:=/joint_states_desired']
+        joint_state_topic = ['joint_states:=/robot/joint_states']
+        moveit_commander.roscpp_initialize(joint_state_topic)
+
+        self.plan_attempts = 3
+
+
+        # # TODO: move this to the commander main node
+        # baxter_interface.RobotEnable().enable()
+        # rospy.sleep(0.25)
+        # print("Baxter is enabled")
+
+
+        #moveit_commander.roscpp_initialize(sys.argv)
+        moveit_commander.roscpp_initialize(sys.argv)
+        self.robot = moveit_commander.RobotCommander()
+        self.scene = moveit_commander.PlanningSceneInterface()
+
+
+        self.group = moveit_commander.MoveGroupCommander("right_arm")
+
+        # Planning and Execution parameters
+        self.position_tol = 0.03
+        self.orientation_tol = 0.3
+
+        self.group.set_goal_position_tolerance(self.position_tol)
+        self.group.set_goal_orientation_tolerance(self.orientation_tol)
+        self.group.set_planning_time(10.0)
+        self.group.allow_replanning(True)
+        self.group.set_max_velocity_scaling_factor(0.15)
+        self.group.set_max_acceleration_scaling_factor(0.1)
+
+        # gripper
+        #self.left_gripper = Gripper('left', CHECK_VERSION)
+        # Reboot Gripper
+        #self.left_gripper.reboot()
+        # Calibrate Gripper
+        #self.left_gripper.calibrate()
+        # Open Gripper
+        #self.left_gripper.open()
+
+        self.orientation_x = -0.003
+        self.orientation_y = 0.696
+        self.orientation_z = -0.0048
+        self.orientation_w = 0.717
+
+
+        self.x_coord = 0.135
+        self.y_coord = 0.17
+        self.z_coord = 0.01
+
+        self.dy = 0.01
+        self.dz = 0.025
+
+        # trajectory in RVIZ
+        self.display_trajectory_publisher = rospy.Publisher('/move_group/display_planned_path',
+            moveit_msgs.msg.DisplayTrajectory,
+            queue_size=20)
+
+
+        # init pose goal for right EE
+        self.init_goal = geometry_msgs.msg.Pose()
+        self.init_goal.orientation.x = 0.065
+        self.init_goal.orientation.y = 0.766
+        self.init_goal.orientation.z = -0.022
+        self.init_goal.orientation.w = 0.639
+
+        self.init_goal.position.x = 0.415
+        self.init_goal.position.y = 0.6 
+        self.init_goal.position.z = -0.15
+
+
+        # # aiming action server
+        # self.aim_server = actionlib.SimpleActionServer('aim_gun', AimGunAction, self.execute, False)
+        # self.aim_server.start()
+        #
+        # self.aiming_feedback = AimGunFeedback()
+        # self.aiming_result = AimGunResult()
+
+        # action server
+
+        self._asgun = actionlib.SimpleActionServer("guncommander", terminator.msg.CommandsAction, execute_cb=self.gunexecute_cb, auto_start = False)
+        self._asaim = actionlib.SimpleActionServer("aimcommander", terminator.msg.CommandsAction, execute_cb=self.aimexecute_cb, auto_start = False)
+
+        self._asgun.start()
+        self._asaim.start()
+
+
+
+

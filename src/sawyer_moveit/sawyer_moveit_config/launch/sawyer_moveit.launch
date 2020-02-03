@@ -13,7 +13,7 @@
   <!-- Add controller box collision shape to check for link collisions if set to true-->
   <arg name="controller_box" default="true"/>
   <!-- Left and electric gripper arg. Set to true to check for collisions for their links -->
-  <arg name="electric_gripper" default="true"/>
+  <arg name="electric_gripper" default="false"/>
   <!-- Set the kinematic tip for the right_arm move_group -->
   <arg name="tip_name"     if="$(arg electric_gripper)" default="right_gripper_tip"/>
   <arg name="tip_name" unless="$(arg electric_gripper)" default="right_hand"/>
