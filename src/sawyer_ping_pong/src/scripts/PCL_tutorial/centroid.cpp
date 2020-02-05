@@ -5,13 +5,20 @@
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 #include <algorithm>
 
-int processCloud(void);
-void getImage(void);
+void processCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr);
+void getImage(rs2::pointcloud*, rs2::points* );
 
 
 /* Describe here 
 */
 int main(int argc, char** argv) {	
+
+	rs2::pointcloud pc;
+	rs2::points points;
+
+	getImage(&pc, &points);
+	//processCloud();
+	// getImage();
 
 	return 0;
 }
@@ -19,75 +26,46 @@ int main(int argc, char** argv) {
 
 /* Describe here
  * parrallelize this? 
- *
- void getImage(void) {
+ */ 
+void getImage( rs2::pointcloud* pc_ptr, rs2::points* points_ptr) {
 
- using namespace rs2;
+	using namespace rs2;
 
-// Declare pointcloud object, for calculating pointclouds and texture mappings
-pointcloud pc = rs2::context().create_pointcloud();
+	// Declare pointcloud object, for calculating pointclouds and texture mappings
+	// pointcloud pc; // = rs2::context().create_pointcloud();
 
-// We want the points object to be persistent so we can display the last cloud when a frame drops
-rs2::points points;
-
-// Declare RealSense pipeline, encapsulating the actual device and sensors
-pipeline pipe;
-// Start streaming with default recommended configuration
-pipe.start();
-
-auto data = pipe.wait_for_frames(); // Wait for next set of frames from the camera
-
-// Wait for the next set of frames from the camera
-auto frames = pipe.wait_for_frames();
-auto depth = frames.get_depth_frame();
-
-// Generate the pointcloud and texture mappings
-points = pc.calculate(depth);
-
-auto color = frames.get_color_frame();
-
-// Tell pointcloud object to map to this color frame
-pc.map_to(color);
-
-
-}
-
-*/
-
-void getImage(void) {
-	rs2::pointcloud pc;
+	// We want the points object to be persistent so we can display the last cloud when a frame drops
 	rs2::points points;
-	rs2::pipeline pipe;
 
-	// rs2::config cfg;
-	//cfg.enable_device_from_file("recording.bag");
+	// Declare RealSense pipeline, encapsulating the actual device and sensors
+	pipeline pipe;
+	// Start streaming with default recommended configuration
 	pipe.start();
 
-	int frame_off_interest = 100;
-	while (1) {
-		if (frame_off_interest <= 0) {
-			auto frames = pipe.wait_for_frames();
-			auto color = frames.get_color_frame();
-			auto depth = frames.get_depth_frame();
+	auto data = pipe.wait_for_frames(); // Wait for next set of frames from the camera
 
-			std::cout << "Measurement at [300, 300] = " << std::to_string(depth.get_distance(300, 300)) << std::endl;
+	// Wait for the next set of frames from the camera
+	auto frames = pipe.wait_for_frames();
+	auto depth = frames.get_depth_frame();
 
-			pc.map_to(color);
-			points = pc.calculate(depth);
-			auto vertices = points.get_vertices();
+	// Generate the pointcloud and texture mappings
+	*points_ptr = (*pc_ptr).calculate(depth);
 
-			std::cout << "Fond " << std::to_string(points.size()) << " Vertices" << std::endl;
+	auto color = frames.get_color_frame();
 
-		}
-	}
+	// Tell pointcloud object to map to this color frame
+	(*pc_ptr).map_to(color);
+
+	return;
 }
+
 
 /* Describe here
 */
-int processCloud(void) {
+void processCloud( pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered ) {
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>);
+	// pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>);
 
 	// Fill in the cloud data
 	cloud->width  = 5;
@@ -136,28 +114,27 @@ int processCloud(void) {
 	pcl::PointXYZ c1;
 
 	// How to turn a pointCloud into a Centroid point?
-
-
 	centroid.get (c1);	
+	 
+		
+	// Print c1's data
+	std::cerr << "    " << c1.x;
+
+
+	return;
+	// return c1;
 
 	// class pcl::PointCloud<pcl::PointXYZ
 	// (*cloud_filtered).get (c1);
 
 	// boost::shared_ptr<pcl::PointCloud<pcl::PointXYZ> >::get(pcl::PointXYZ&)
 	// (cloud_filtered).get (c1);
-
-
-
 	// The expected result is: c1.x == 3, c1.y == 4, c1.z == 5
 	// It is also okay to use `get()` with a different point type
-
-
 	// pcl::PointXYZRGB c2;
 	// cloud_filtered.get (c2);
 	// The expected result is: c2.x == 3, c2.y == 4, c2.z == 5,
 	// and c2.rgb is left untouched
-
-	return 0;
 }
 
 
