@@ -36,7 +36,8 @@ pcl_ptr points_to_pcl(const rs2::points& points)
 
 
 
-/* Describe here 
+/* Main function. At present, there should be no command 
+ * line arguments 
 */
 int main(int argc, char** argv) {	
 
@@ -56,11 +57,38 @@ int main(int argc, char** argv) {
 	return 0;
 }
 
+/* This method takes a pointer to a PCL pointcloud and 
+ * filters it so that only points inside the volume defined by
+ * parameters x, y, z are in the point cloud
+ *
+ * Arguments:
+ * PCL_cloud is the 
+ *
+ * Returns:
+ *
+ */
+ 
+void filterImage(pcl::PointCloud<pcl::PointXYZ>::Ptr* PCL_cloud, double x, double y, double z) {
+	
+	// Create a new pointcloud ptr?
+	// Do not copy onto the stack!
 
-/* Describe here
- * parrallelize this? 
- */ 
-void getImage( rs2::pointcloud* pc_ptr, rs2::points* points_ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr* PCL_cloud) {
+
+}
+
+
+
+/* This method gets a pointcloud from the realsense camera. Calls method
+ * to convert the realsense pointcloud format to the PCL pointcloud format.
+ * Arguments: 
+ * pc_ptr is a pointer to the realsense pointcloud
+ * points_ptr is a pointer to realsense points. These are fields of the pointcloud
+ * PCL_cloud is a pointer to a PCL format pointcloud
+ * Returns:
+ * Returns void. Arguments are pointers to support pass by refrence updating
+ * Why am I passing by refrence? I want to avoid copying a pointcloud onto the stack
+*/ 
+void getImage(rs2::pointcloud* pc_ptr, rs2::points* points_ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr* PCL_cloud) {
 
 	using namespace rs2;
 
@@ -97,7 +125,10 @@ void getImage( rs2::pointcloud* pc_ptr, rs2::points* points_ptr, pcl::PointCloud
 }
 
 
-/* Describe here
+/* This method takes the filtered cloud
+ *
+ *
+ *
 */
 void processCloud( pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered ) {
 
