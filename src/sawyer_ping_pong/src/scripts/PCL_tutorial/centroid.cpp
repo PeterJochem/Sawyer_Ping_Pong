@@ -6,7 +6,7 @@
 #include <algorithm>
 
 void processCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr);
-void getImage(rs2::pointcloud*, rs2::points* );
+void getImage(rs2::pointcloud*, rs2::points*, pcl::PointCloud<pcl::PointXYZ>::Ptr* );
 
 using pcl_ptr = pcl::PointCloud<pcl::PointXYZ>::Ptr;
 
@@ -51,8 +51,7 @@ int main(int argc, char** argv) {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr PCL_cloud;
 	getImage(&pc, &points, &PCL_cloud);
 	
-	// processCloud();
-	// getImage();
+	processCloud(PCL_cloud);
 
 	return 0;
 }
@@ -61,7 +60,7 @@ int main(int argc, char** argv) {
 /* Describe here
  * parrallelize this? 
  */ 
-void getImage( rs2::pointcloud* pc_ptr, rs2::points* points_ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr PCL_cloud) {
+void getImage( rs2::pointcloud* pc_ptr, rs2::points* points_ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr* PCL_cloud) {
 
 	using namespace rs2;
 
