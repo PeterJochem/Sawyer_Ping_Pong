@@ -13,6 +13,7 @@ add_definitions(${PCL_DEFINITIONS} )
 add_executable (centroid centroid.cpp)
 target_link_libraries (centroid ${PCL_LIBRARIES} )
 target_link_libraries(centroid ${realsense2_LIBRARY} )
+target_link_libraries(centroid ${DEPENDENCIES})
 # target_link_libraries (centroid ${PCL_LIBRARIES})
 
 

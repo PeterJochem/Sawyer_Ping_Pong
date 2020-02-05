@@ -8,16 +8,50 @@
 void processCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr);
 void getImage(rs2::pointcloud*, rs2::points* );
 
+using pcl_ptr = pcl::PointCloud<pcl::PointXYZ>::Ptr;
+
+
+/* Describe this function here
+ */
+pcl_ptr points_to_pcl(const rs2::points& points)
+{
+    pcl_ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+
+    auto sp = points.get_profile().as<rs2::video_stream_profile>();
+    cloud->width = sp.width();
+    cloud->height = sp.height();
+    cloud->is_dense = false;
+    cloud->points.resize(points.size());
+    auto ptr = points.get_vertices();
+    for (auto& p : cloud->points)
+    {
+        p.x = ptr->x;
+        p.y = ptr->y;
+        p.z = ptr->z;
+        ptr++;
+    }
+
+    return cloud;
+}
+
+
 
 /* Describe here 
 */
 int main(int argc, char** argv) {	
 
+	// This is the pointcloud in RS2 format
 	rs2::pointcloud pc;
+
+	// These are points in the RS2 format that are 
+	// fields of a pointcloud
 	rs2::points points;
 
-	getImage(&pc, &points);
-	//processCloud();
+	// This is the point cloud in PCL format 
+	pcl::PointCloud<pcl::PointXYZ>::Ptr PCL_cloud;
+	getImage(&pc, &points, &PCL_cloud);
+	
+	// processCloud();
 	// getImage();
 
 	return 0;
@@ -27,7 +61,7 @@ int main(int argc, char** argv) {
 /* Describe here
  * parrallelize this? 
  */ 
-void getImage( rs2::pointcloud* pc_ptr, rs2::points* points_ptr) {
+void getImage( rs2::pointcloud* pc_ptr, rs2::points* points_ptr, pcl::PointCloud<pcl::PointXYZ>::Ptr PCL_cloud) {
 
 	using namespace rs2;
 
@@ -55,6 +89,10 @@ void getImage( rs2::pointcloud* pc_ptr, rs2::points* points_ptr) {
 
 	// Tell pointcloud object to map to this color frame
 	(*pc_ptr).map_to(color);
+		
+	// auto pcl_points = points_to_pcl(points);
+	// auto pcl_points = points_to_pcl(*points_ptr);
+	*PCL_cloud = points_to_pcl(*points_ptr);
 
 	return;
 }
