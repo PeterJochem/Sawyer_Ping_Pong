@@ -4,17 +4,27 @@
 #include <pcl/filters/passthrough.h>
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 #include <algorithm>
+#include "example.hpp"
 
-void processCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr);
-void getImage(rs2::pointcloud*, rs2::points*, pcl::PointCloud<pcl::PointXYZ>::Ptr* );
 
 using pcl_ptr = pcl::PointCloud<pcl::PointXYZ>::Ptr;
 
+void processCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr);
+void getImage(rs2::pointcloud*, rs2::points*, pcl::PointCloud<pcl::PointXYZ>::Ptr* );
+//void pcl_ptr points_to_pcl(rs2::points*);
 
-/* Describe this function here
+/* This method converts a realsense pointcloud into a PCL 
+ * pointcloud  
+ *
+ * Arguments: 
+ * points is the realsense point cloud 
+ *
+ * Returns:
+ * Returns 
+ *
  */
-pcl_ptr points_to_pcl(const rs2::points& points)
-{
+pcl_ptr points_to_pcl(const rs2::points& points) {
+    
     pcl_ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
 
     auto sp = points.get_profile().as<rs2::video_stream_profile>();
@@ -23,17 +33,18 @@ pcl_ptr points_to_pcl(const rs2::points& points)
     cloud->is_dense = false;
     cloud->points.resize(points.size());
     auto ptr = points.get_vertices();
-    for (auto& p : cloud->points)
-    {
+    
+    for (auto& p : cloud->points) {
         p.x = ptr->x;
         p.y = ptr->y;
         p.z = ptr->z;
         ptr++;
     }
 
+    // Write the new cloud to the pointee 
+    // *cloud_ptr = cloud;  
     return cloud;
 }
-
 
 
 /* Main function. At present, there should be no command 
@@ -53,7 +64,7 @@ int main(int argc, char** argv) {
 	getImage(&pc, &points, &PCL_cloud);
 	
 	processCloud(PCL_cloud);
-
+	
 	return 0;
 }
 
@@ -97,7 +108,11 @@ void getImage(rs2::pointcloud* pc_ptr, rs2::points* points_ptr, pcl::PointCloud<
 
 	// We want the points object to be persistent so we can display the last cloud when a frame drops
 	rs2::points points;
+	
 
+	// Creating the pipe is SUPER computationally expensive
+	// Liekly need to do some communication with the actual camera!!
+	//
 	// Declare RealSense pipeline, encapsulating the actual device and sensors
 	pipeline pipe;
 	// Start streaming with default recommended configuration
@@ -130,47 +145,41 @@ void getImage(rs2::pointcloud* pc_ptr, rs2::points* points_ptr, pcl::PointCloud<
  *
  *
 */
-void processCloud( pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered ) {
+void processCloud( pcl::PointCloud<pcl::PointXYZ>::Ptr original_cloud ) {
 
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
-	// pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>);
-
-	// Fill in the cloud data
-	cloud->width  = 5;
-	cloud->height = 1;
-	cloud->points.resize (cloud->width * cloud->height);
-
-	for (std::size_t i = 0; i < cloud->points.size (); ++i)
-	{
-		cloud->points[i].x = 1024 * rand () / (RAND_MAX + 1.0f);
-		cloud->points[i].y = 1024 * rand () / (RAND_MAX + 1.0f);
-		cloud->points[i].z = 1024 * rand () / (RAND_MAX + 1.0f);
-	}
-
-	std::cerr << "Cloud before filtering: " << std::endl;
-	for (std::size_t i = 0; i < cloud->points.size (); ++i)
-		std::cerr << "    " << cloud->points[i].x << " " 
-			<< cloud->points[i].y << " " 
-			<< cloud->points[i].z << std::endl;
-
+	pcl_ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
+	
+	// Filter the X	
 	// Create the filtering object
 	pcl::PassThrough<pcl::PointXYZ> pass;
-	pass.setInputCloud (cloud);
-	pass.setFilterFieldName ("z");
-	pass.setFilterLimits (0.0, 1.0);
-	//pass.setFilterLimitsNegative (true);
-	pass.filter (*cloud_filtered);
+	pass.setInputCloud(original_cloud);
+	pass.setFilterFieldName("x");
+	pass.setFilterLimits(0.0, 1.0);
+	pass.setFilterLimitsNegative(true);
+	// pass.filter(*original_cloud);
+	// pass.filter(*cloud_filtered);
 
-	std::cerr << "Cloud after filtering: " << std::endl;
-	for (std::size_t i = 0; i < cloud_filtered->points.size (); ++i)
-		std::cerr << "    " << cloud_filtered->points[i].x << " " 
-			<< cloud_filtered->points[i].y << " " 
-			<< cloud_filtered->points[i].z << std::endl;
+	// Filter the Y
+        pass.setInputCloud(cloud_filtered);
+        pass.setFilterFieldName("y");
+        pass.setFilterLimits(0.0, 1.0);
+        pass.setFilterLimitsNegative(true);
+        // pass.filter(*original_cloud);
+        //pass.filter(*cloud_filtered);
+	
+	// Filter the Z
+        pass.setInputCloud(cloud_filtered);
+        pass.setFilterFieldName("z");
+        pass.setFilterLimits(0.0, 1.0);
+        pass.setFilterLimitsNegative(true);
+        // pass.filter(*original_cloud);
+        //pass.filter(*cloud_filtered);
 
+	
 	// CentroidPoint<pcl::PointXYZ> centroid;
 	pcl::CentroidPoint<pcl::PointXYZ> centroid;
-	for (int i = 0; i < cloud_filtered->points.size (); ++i) {
-
+	for (int i = 0; i < cloud_filtered->points.size(); ++i) {
+		
 		int x = cloud_filtered->points[i].x; 
 		int y = cloud_filtered->points[i].y;
 		int z = cloud_filtered->points[i].z;
@@ -182,12 +191,10 @@ void processCloud( pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered ) {
 	pcl::PointXYZ c1;
 
 	// How to turn a pointCloud into a Centroid point?
-	centroid.get (c1);	
+	centroid.get(c1);	
 	 
-		
 	// Print c1's data
-	std::cerr << "    " << c1.x;
-
+	std::cerr << "The centroid's x, y, z is (" << c1.x << ", " << c1.y << ", " << c1.z <<  ") \n";
 
 	return;
 	// return c1;
