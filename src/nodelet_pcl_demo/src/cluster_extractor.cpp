@@ -22,6 +22,7 @@
 #include <geometry_msgs/Point.h>
 #include <nodelet_pcl_demo/dataPoint.h>
 #include <visualization_msgs/Marker.h>
+#include <cmath>
 
 //---------------------------------------------------------------------------
 // Global Variables
@@ -192,10 +193,16 @@ class ClusterExtractor
 			}
 
 			float length = float(cloud_filtered->points.size() );
-			averageX = averageX / length; 
-			averageY = averageY / length;
-			averageZ = averageZ / length;
-
+			if ( length > 0) {
+				averageX = averageX / length; 
+				averageY = averageY / length;
+				averageZ = averageZ / length;
+			}
+			else {
+				averageX = 0.0;
+                                averageY = 0.0;
+                                averageZ = 0.0;
+			}
 
 			// Fetch centroid using `get()`
 			// pcl::PointXYZ c1;
@@ -227,7 +234,7 @@ class ClusterExtractor
 
 			// Compute the new velocity
 			geometry_msgs::Point myVelocity;
-			if ( (priorX == 0.0) && (priorY == 0.0) && (priorZ == 0.0) ) {
+			if ( ( (priorX == 0.0) && (priorY == 0.0) && (priorZ == 0.0) ) ) {
 				// Don't publish velocity, simply record the velocity
 				priorX = averageX;
 				priorY = averageY;
@@ -235,7 +242,7 @@ class ClusterExtractor
 
 				t_prior = ros::Time::now();
 			}
-			else {
+			else if( isnan(averageX) == false) {
 				// Compute the velocity and publish it
 
 				// .toSec() converts the time object to a floating point number	
