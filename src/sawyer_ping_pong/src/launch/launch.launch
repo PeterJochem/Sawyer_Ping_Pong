@@ -1,7 +1,19 @@
 <launch>
-
+	
+  
  <arg name="config" default="true"/>
- <arg name="rviz_config" default="$(find sawyer_moveit_config)/launch/moveit.rviz" />
+ <!-- arg name="rviz_config" default="$(find sawyer_moveit_config)/launch/moveit.rviz" / -->
+ <arg name="vis" default="true" doc="Launch RViZ"/>
+
+ <arg name="source" default="realsense" doc="Source of point cloud: can be kinect, openni, realsense, pcd (for data from files), or none"/>
+ 
+
+ <include if="$(eval source == 'realsense')" file="$(find realsense2_camera)/launch/rs_camera.launch" >
+       <arg name="filters" value="pointcloud" />
+  </include>
+
+    <!-- launch the nodelet manager -->
+  <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen"/> 
 
   <!--Node for trajectories, used with MoveIt -->
   <node name="joint_trajectory_action_server" pkg="intera_interface" type="joint_trajectory_action_server.py" output="log"/>
@@ -14,13 +26,32 @@
     <arg name="load_robot_description" value="true"/>
   </include>
 
-
-   <include file="$(find sawyer_moveit_config)/launch/moveit_rviz.launch">
-    <arg name="config" value="$(arg config)" />
-    <arg name="rviz_config" value="$(arg rviz_config)" />
-  </include>
+   <!-- include file="$(find sawyer_moveit_config)/launch/moveit_rviz.launch" -->
+    <!-- arg name="config" value="$(arg config)" / -->
+    <!-- arg name="rviz_config" value="$(arg rviz_config)" / --> 
+  <!-- /include -->
 
       <node name="myMoveArm3" pkg="sawyer_ping_pong" type="moveArm3" />
+	
+   <!-- intel realsense, which publishes on /camera/depth/color/points instead of /camera/depth/points -->
+  <!-- remap from="/camera/depth/color/points" to="/camera/depth/points" / -->
+
+  <!-- pcd reader. this node reads the PCD file and publishes to a desired
+       topic. I have rotated the data contained in the original PCD file
+       downloaded from the PCL site. In the original PCD file, all data was
+       behind the sensor if we consider the frame to be the `camera_depth_optical_frame` -->
+  <group ns="pcd_reader" if="$(eval source =='pcd')">
+    <node name="pcd_publisher" pkg="pcl_ros" type="pcd_to_pointcloud"
+          args="$(find nodelet_pcl_demo)/launch/table_rotated.pcd 0.05">
+      <remap from="cloud_pcd" to="/camera/depth/points" />
+      <param name="frame_id" value="camera_depth_optical_frame" />
+    </node>
+  </group>
+
+  <node pkg="nodelet_pcl_demo" name="cluster_extraction" type="cluster_extractor" output="screen" />
+ 
+	<node pkg="rviz" type="rviz" respawn="false" name="rviz" if="$(arg vis)"
+        args="-d $(find nodelet_pcl_demo)/launch/nodelet_demo.rviz" />
 
 
 

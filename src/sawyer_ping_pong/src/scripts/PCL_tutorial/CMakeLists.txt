@@ -10,6 +10,11 @@ include_directories(${PCL_INCLUDE_DIRS} )
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS} )
 
+find_package(glfw3 3.3 QUIET)
+add_subdirectory(gl)
+
+
+
 add_executable (centroid centroid.cpp)
 target_link_libraries (centroid ${PCL_LIBRARIES} )
 target_link_libraries(centroid ${realsense2_LIBRARY} )

@@ -7,7 +7,8 @@
 
 #define GL_SILENCE_DEPRECATION
 #define GLFW_INCLUDE_GLU
-#include <GLFW/glfw3.h>
+//#include <GLFW/glfw3.h>
+#include "/usr/include/GLFW/glfw3.h"
 
 #include <librealsense2/rs.hpp> // Include RealSense Cross Platform API
 
