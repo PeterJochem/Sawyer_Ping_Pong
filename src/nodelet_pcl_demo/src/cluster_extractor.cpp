@@ -176,20 +176,31 @@ class ClusterExtractor
 
 			// CentroidPoint<pcl::PointXYZ> centroid;
 			pcl::CentroidPoint<pcl::PointXYZ> centroid;
+			long double averageX = 0.0;  
+			long double averageY = 0.0;
+			long double averageZ = 0.0;
 			for (int i = 0; i < cloud_filtered->points.size(); ++i) {
 
-				int x = cloud_filtered->points[i].x;
-				int y = cloud_filtered->points[i].y;
-				int z = cloud_filtered->points[i].z;
+				averageX = averageX + cloud_filtered->points[i].x;
+				averageY = averageY + cloud_filtered->points[i].y;
+				averageZ = averageZ + cloud_filtered->points[i].z;
 
-				centroid.add(pcl::PointXYZ (x, y, z) );
+				// int x = cloud_filtered->points[i].x;
+				// int y = cloud_filtered->points[i].y;
+				// int z = cloud_filtered->points[i].z;
+				// centroid.add(pcl::PointXYZ (x, y, z) );
 			}
 
-			// Fetch centroid using `get()`
-			pcl::PointXYZ c1;
+			float length = float(cloud_filtered->points.size() );
+			averageX = averageX / length; 
+			averageY = averageY / length;
+			averageZ = averageZ / length;
 
+
+			// Fetch centroid using `get()`
+			// pcl::PointXYZ c1;
 			// How to turn a pointCloud into a Centroid point?
-			centroid.get(c1);
+			// centroid.get(c1);
 
 			// ros::NodeHandle n;	
 			// Lets the system know we are going to publish a geometry_msg::Point on the topic Ball_Location
@@ -198,9 +209,9 @@ class ClusterExtractor
 
 			nodelet_pcl_demo::dataPoint currentLocation;
 			currentLocation.header.stamp = ros::Time::now();
-			currentLocation.myPoint.x = c1.x;
-			currentLocation.myPoint.y = c1.y;
-			currentLocation.myPoint.z = c1.z;	
+			currentLocation.myPoint.x = averageX;
+			currentLocation.myPoint.y = averageY;
+			currentLocation.myPoint.z = averageZ;	
 			position_pub.publish(currentLocation);
 
 
@@ -218,9 +229,9 @@ class ClusterExtractor
 			geometry_msgs::Point myVelocity;
 			if ( (priorX == 0.0) && (priorY == 0.0) && (priorZ == 0.0) ) {
 				// Don't publish velocity, simply record the velocity
-				priorX = c1.x;
-				priorY = c1.y;
-				priorZ = c1.z;	
+				priorX = averageX;
+				priorY = averageY;
+				priorZ = averageZ;	
 
 				t_prior = ros::Time::now();
 			}
@@ -235,9 +246,9 @@ class ClusterExtractor
 
 				float dt = t_now - t_prior.toSec(); 
 
-				myVelocity.x = (float(c1.x - priorX) ) / (dt);
-				myVelocity.y = (float(c1.y - priorY) ) / (dt);
-				myVelocity.z = (float(c1.z - priorZ) ) / (dt);
+				myVelocity.x = (float(averageX - priorX) ) / (dt);
+				myVelocity.y = (float(averageY - priorY) ) / (dt);
+				myVelocity.z = (float(averageZ - priorZ) ) / (dt);
 
 				velocity_pub.publish(myVelocity);		
 				ros::spinOnce();
@@ -250,17 +261,17 @@ class ClusterExtractor
 			marker.id = 0;
 			marker.type = visualization_msgs::Marker::SPHERE;
 			marker.action = visualization_msgs::Marker::ADD;
-			marker.pose.position.x = c1.x;
-			marker.pose.position.y = c1.y;
-			marker.pose.position.z = c1.z;
+			marker.pose.position.x = averageX;
+			marker.pose.position.y = averageY;
+			marker.pose.position.z = averageZ;
 			marker.pose.orientation.x = 0.0;
 			marker.pose.orientation.y = 0.0;
 			marker.pose.orientation.z = 0.0;
 			marker.pose.orientation.w = 1.0;
-			marker.scale.x = 1;
+			marker.scale.x = 0.1;
 			marker.scale.y = 0.1;
 			marker.scale.z = 0.1;
-			marker.color.a = 1.0; // Don't forget to set the alpha!
+			marker.color.a = 0.5; // Don't forget to set the alpha!
 			marker.color.r = 0.0;
 			marker.color.g = 1.0;
 			marker.color.b = 0.0;
