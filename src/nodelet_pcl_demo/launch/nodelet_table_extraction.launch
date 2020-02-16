@@ -1,0 +1,36 @@
+<launch> 
+
+  <arg name="vis" default="true" doc="Launch RViZ"/>
+  <arg name="source" default="realsense" doc="Source of point cloud: can be kinect, openni, realsense, pcd (for data from files), or none"/>
+  
+  <!-- intel realsense, which publishes on /camera/depth/color/points instead of /camera/depth/points -->
+  <remap from="/camera/depth/color/points" to="/camera/depth/points" />
+
+<include if="$(eval source == 'realsense')" file="$(find realsense2_camera)/launch/rs_camera.launch" >
+       <arg name="filters" value="pointcloud" />
+  </include>
+
+  <!-- launch the nodelet manager -->
+  <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen"/>  
+
+  <!-- pcd reader. this node reads the PCD file and publishes to a desired
+       topic. I have rotated the data contained in the original PCD file
+       downloaded from the PCL site. In the original PCD file, all data was
+       behind the sensor if we consider the frame to be the `camera_depth_optical_frame` -->
+  <group ns="pcd_reader" if="$(eval source =='pcd')">
+    <node name="pcd_publisher" pkg="pcl_ros" type="pcd_to_pointcloud"
+          args="$(find nodelet_pcl_demo)/launch/table_rotated.pcd 0.05">
+      <remap from="cloud_pcd" to="/camera/depth/points" />
+      <param name="frame_id" value="camera_depth_optical_frame" />
+    </node>
+  </group>
+  
+  <node pkg="nodelet_pcl_demo" name="cluster_extraction" type="cluster_extractor" output="screen" />
+
+  <node pkg="nodelet_pcl_demo" name="myMoveRobot_Node" type="moveRobot" output="screen" />
+
+  <!-- start rviz if vis arg is true -->
+  <node pkg="rviz" type="rviz" respawn="false" name="rviz" if="$(arg vis)"
+        args="-d $(find nodelet_pcl_demo)/launch/nodelet_demo.rviz" />
+
+</launch>
