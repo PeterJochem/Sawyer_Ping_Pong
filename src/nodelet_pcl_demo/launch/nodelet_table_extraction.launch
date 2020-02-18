@@ -2,6 +2,9 @@
 
   <arg name="vis" default="true" doc="Launch RViZ"/>
   <arg name="source" default="realsense" doc="Source of point cloud: can be kinect, openni, realsense, pcd (for data from files), or none"/>
+
+
+  <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 1 base camera_depth_frame 100" />
   
   <!-- intel realsense, which publishes on /camera/depth/color/points instead of /camera/depth/points -->
   <remap from="/camera/depth/color/points" to="/camera/depth/points" />

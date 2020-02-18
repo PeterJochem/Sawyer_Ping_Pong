@@ -23,6 +23,10 @@
 #include <nodelet_pcl_demo/dataPoint.h>
 #include <visualization_msgs/Marker.h>
 #include <cmath>
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
+#include <unistd.h>
+
 
 //---------------------------------------------------------------------------
 // Global Variables
@@ -86,8 +90,7 @@ class ClusterExtractor
 		ros::Publisher vis_pub;
 
 		tf::TransformBroadcaster br;
-
-
+		tf::TransformListener listener;
 
 
 	public:
@@ -109,6 +112,10 @@ class ClusterExtractor
 			velocity_pub = n_.advertise<geometry_msgs::Point>("/ball_velocity", 3);
 
 			vis_pub = n_.advertise<visualization_msgs::Marker>("/visualization_marker", 0);
+			
+			// Construct the transform listener?	
+			// listener = TransformListener(ros::Duration max_cache_time=ros::Duration(DEFAULT_CACHE_TIME), bool spin_thread=true);
+
 		}
 
 		// this function gets called every time new pcl data comes in
@@ -200,8 +207,8 @@ class ClusterExtractor
 			}
 			else {
 				averageX = 0.0;
-                                averageY = 0.0;
-                                averageZ = 0.0;
+				averageY = 0.0;
+				averageZ = 0.0;
 			}
 
 			// Fetch centroid using `get()`
@@ -214,13 +221,34 @@ class ClusterExtractor
 			// The int is the number to keep in the buffer before starting to throw away the old messages
 			// ros::Publisher position_pub = n_.advertise<geometry_msgs::Point>("/Ball_Location", 1);
 
+			tf::StampedTransform transform;
+			listener.lookupTransform("base", "camera_depth_frame", ros::Time::now(), transform);
+			
+
 			nodelet_pcl_demo::dataPoint currentLocation;
 			currentLocation.header.stamp = ros::Time::now();
 			currentLocation.myPoint.x = averageX;
 			currentLocation.myPoint.y = averageY;
 			currentLocation.myPoint.z = averageZ;	
-			position_pub.publish(currentLocation);
 
+
+			geometry_msgs::PointStamped point_in_camera_frame; 
+			geometry_msgs::PointStamped point_in_base_frame;
+
+			point_in_camera_frame.header.frame_id = "camera_depth_frame";
+			point_in_camera_frame.header.stamp = ros::Time();
+			
+			point_in_camera_frame.point.x = averageX;
+			point_in_camera_frame.point.y = averageY;
+			point_in_camera_frame.point.z = averageZ;
+
+
+			// Convert between the two frames
+		 	// void tf::TransformListener::transformPoint(const string&, const PointStamped&, geometry_msgs::PointStamped&) const
+			listener.transformPoint("base", point_in_camera_frame, point_in_base_frame);
+
+			// position_pub.publish(currentLocation);
+			position_pub.publish(point_in_base_frame);
 
 			// What does this do? 
 			// ROS_INFO("%s", msg.data.c_str());
@@ -295,10 +323,39 @@ class ClusterExtractor
 		}
 };
 
+/* Describe function here
+*/
+void publishTransform(void) {
+	
+	// This is done via a node from the launch file
+	// double T_Robot_Camera[4][4] = {  {1.0, 0.0, 0.0, 0.86995}, {0.0, 1.0, 0.0, 0.9906}, {0.0, 0.0, -1.0, 2.1082}, {0.0, 0.0, 0.0, 1.0}  };
+	double x_offset = 0.86995;
+	double y_offset = 0.9906;
+	double z_offset = 2.1082;
 
-int main(int argc, char **argv)
-{
+	static tf::TransformBroadcaster br;
+	tf::Transform transform;
+
+	transform.setOrigin( tf::Vector3(x_offset, y_offset, z_offset) );
+	// This is the origin of the camera frame in Sawyer's frame?
+	// So the offset is the offset to the camera frame in Sawyer's frame
+
+	tf::Quaternion q;
+	q.setRPY(0, 0, 0);
+	transform.setRotation(q);
+
+	br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "base", "camera_depth_frame" ) );
+	
+	return;
+}	
+
+
+int main(int argc, char **argv) {
+
 	ros::init(argc, argv, "cluster_extractor");
+	publishTransform();
+	sleep(5);
+
 	ClusterExtractor extractor;
 
 	ros::spin();

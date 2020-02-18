@@ -59,6 +59,12 @@ Visualization Manager:
       Frame Timeout: 1
       Frames:
         All Enabled: false
+        base:
+          Value: true
+        camera_accel_frame:
+          Value: true
+        camera_accel_optical_frame:
+          Value: true
         camera_color_frame:
           Value: true
         camera_color_optical_frame:
@@ -66,6 +72,10 @@ Visualization Manager:
         camera_depth_frame:
           Value: false
         camera_depth_optical_frame:
+          Value: true
+        camera_gyro_frame:
+          Value: true
+        camera_gyro_optical_frame:
           Value: true
         camera_infra1_frame:
           Value: true
@@ -77,6 +87,138 @@ Visualization Manager:
           Value: true
         camera_link:
           Value: false
+        controller_box:
+          Value: true
+        head:
+          Value: true
+        head_camera:
+          Value: true
+        pedestal:
+          Value: true
+        pedestal_feet:
+          Value: true
+        reference/base:
+          Value: true
+        reference/controller_box:
+          Value: true
+        reference/head:
+          Value: true
+        reference/head_camera:
+          Value: true
+        reference/pedestal:
+          Value: true
+        reference/pedestal_feet:
+          Value: true
+        reference/right_arm_base_link:
+          Value: true
+        reference/right_arm_itb:
+          Value: true
+        reference/right_connector_plate_base:
+          Value: true
+        reference/right_connector_plate_mount:
+          Value: true
+        reference/right_electric_gripper_base:
+          Value: true
+        reference/right_gripper_base:
+          Value: true
+        reference/right_gripper_l_finger:
+          Value: true
+        reference/right_gripper_l_finger_tip:
+          Value: true
+        reference/right_gripper_r_finger:
+          Value: true
+        reference/right_gripper_r_finger_tip:
+          Value: true
+        reference/right_gripper_tip:
+          Value: true
+        reference/right_hand:
+          Value: true
+        reference/right_hand_camera:
+          Value: true
+        reference/right_l0:
+          Value: true
+        reference/right_l1:
+          Value: true
+        reference/right_l1_2:
+          Value: true
+        reference/right_l2:
+          Value: true
+        reference/right_l2_2:
+          Value: true
+        reference/right_l3:
+          Value: true
+        reference/right_l4:
+          Value: true
+        reference/right_l4_2:
+          Value: true
+        reference/right_l5:
+          Value: true
+        reference/right_l6:
+          Value: true
+        reference/right_torso_itb:
+          Value: true
+        reference/right_wrist:
+          Value: true
+        reference/screen:
+          Value: true
+        reference/torso:
+          Value: true
+        right_arm_base_link:
+          Value: true
+        right_arm_itb:
+          Value: true
+        right_connector_plate_base:
+          Value: true
+        right_connector_plate_mount:
+          Value: true
+        right_electric_gripper_base:
+          Value: true
+        right_gripper_base:
+          Value: true
+        right_gripper_l_finger:
+          Value: true
+        right_gripper_l_finger_tip:
+          Value: true
+        right_gripper_r_finger:
+          Value: true
+        right_gripper_r_finger_tip:
+          Value: true
+        right_gripper_tip:
+          Value: true
+        right_hand:
+          Value: true
+        right_hand_camera:
+          Value: true
+        right_l0:
+          Value: true
+        right_l1:
+          Value: true
+        right_l1_2:
+          Value: true
+        right_l2:
+          Value: true
+        right_l2_2:
+          Value: true
+        right_l3:
+          Value: true
+        right_l4:
+          Value: true
+        right_l4_2:
+          Value: true
+        right_l5:
+          Value: true
+        right_l6:
+          Value: true
+        right_torso_itb:
+          Value: true
+        right_wrist:
+          Value: true
+        screen:
+          Value: true
+        torso:
+          Value: true
+        world:
+          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: false
@@ -84,17 +226,117 @@ Visualization Manager:
       Show Names: false
       Tree:
         camera_link:
+          camera_accel_frame:
+            camera_accel_optical_frame:
+              {}
           camera_color_frame:
             camera_color_optical_frame:
               {}
           camera_depth_frame:
             camera_depth_optical_frame:
               {}
+          camera_gyro_frame:
+            camera_gyro_optical_frame:
+              {}
           camera_infra1_frame:
             camera_infra1_optical_frame:
               {}
           camera_infra2_frame:
             camera_infra2_optical_frame:
+              {}
+        world:
+          base:
+            controller_box:
+              {}
+            pedestal:
+              {}
+            pedestal_feet:
+              {}
+            right_arm_base_link:
+              right_l0:
+                head:
+                  head_camera:
+                    {}
+                  screen:
+                    {}
+                right_l1:
+                  right_l1_2:
+                    {}
+                  right_l2:
+                    right_l2_2:
+                      {}
+                    right_l3:
+                      right_l4:
+                        right_arm_itb:
+                          {}
+                        right_l4_2:
+                          {}
+                        right_l5:
+                          right_hand_camera:
+                            {}
+                          right_l6:
+                            right_hand:
+                              right_gripper_base:
+                                right_connector_plate_base:
+                                  right_connector_plate_mount:
+                                    right_electric_gripper_base:
+                                      right_gripper_l_finger:
+                                        right_gripper_l_finger_tip:
+                                          {}
+                                      right_gripper_r_finger:
+                                        right_gripper_r_finger_tip:
+                                          {}
+                                right_gripper_tip:
+                                  {}
+                          right_wrist:
+                            {}
+                right_torso_itb:
+                  {}
+            torso:
+              {}
+          reference/base:
+            reference/controller_box:
+              {}
+            reference/pedestal:
+              {}
+            reference/pedestal_feet:
+              {}
+            reference/right_arm_base_link:
+              reference/right_l0:
+                reference/head:
+                  reference/head_camera:
+                    {}
+                  reference/screen:
+                    {}
+                reference/right_l1:
+                  reference/right_l1_2:
+                    {}
+                  reference/right_l2:
+                    reference/right_l2_2:
+                      {}
+                    reference/right_l3:
+                      reference/right_l4:
+                        reference/right_arm_itb:
+                          {}
+                        reference/right_l4_2:
+                          {}
+                        reference/right_l5:
+                          reference/right_hand_camera:
+                            {}
+                          reference/right_l6:
+                            reference/right_hand:
+                              reference/right_gripper_base:
+                                reference/right_connector_plate_base:
+                                  reference/right_connector_plate_mount:
+                                    reference/right_electric_gripper_base:
+                                      {}
+                                reference/right_gripper_tip:
+                                  {}
+                          reference/right_wrist:
+                            {}
+                reference/right_torso_itb:
+                  {}
+            reference/torso:
               {}
       Update Interval: 0
       Value: true
@@ -473,9 +715,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 0.5
+      Max Intensity: -999999
       Min Color: 0; 0; 0
-      Min Intensity: 0.2110000103712082
+      Min Intensity: 999999
       Name: PointCloud2
       Position Transformer: XYZ
       Queue Size: 10
@@ -488,11 +730,19 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: false
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /visualization_marker
+      Name: Marker
+      Namespaces:
+        my_namespace: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: camera_depth_optical_frame
+    Fixed Frame: base
     Frame Rate: 30
   Name: root
   Tools:
@@ -531,10 +781,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: -1.5697963237762451
+      Pitch: 0.21520346403121948
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.663490295410156
+      Yaw: 4.713493347167969
     Saved: ~
 Window Geometry:
   Displays:
