@@ -5,6 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /TF1
         - /TF1/Frames1
         - /PointCloud1
         - /PointCloud22
@@ -28,7 +29,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -62,190 +63,174 @@ Visualization Manager:
         base:
           Value: true
         camera_accel_frame:
-          Value: true
-        camera_accel_optical_frame:
-          Value: true
-        camera_color_frame:
-          Value: true
-        camera_color_optical_frame:
-          Value: true
-        camera_depth_frame:
           Value: false
+        camera_accel_optical_frame:
+          Value: false
+        camera_color_frame:
+          Value: false
+        camera_color_optical_frame:
+          Value: false
+        camera_depth_frame:
+          Value: true
         camera_depth_optical_frame:
-          Value: true
+          Value: false
         camera_gyro_frame:
-          Value: true
+          Value: false
         camera_gyro_optical_frame:
-          Value: true
+          Value: false
         camera_infra1_frame:
-          Value: true
+          Value: false
         camera_infra1_optical_frame:
-          Value: true
+          Value: false
         camera_infra2_frame:
-          Value: true
+          Value: false
         camera_infra2_optical_frame:
-          Value: true
+          Value: false
         camera_link:
           Value: false
         controller_box:
-          Value: true
+          Value: false
         head:
-          Value: true
+          Value: false
         head_camera:
-          Value: true
+          Value: false
         pedestal:
-          Value: true
+          Value: false
         pedestal_feet:
-          Value: true
+          Value: false
         reference/base:
-          Value: true
+          Value: false
         reference/controller_box:
-          Value: true
+          Value: false
         reference/head:
-          Value: true
+          Value: false
         reference/head_camera:
-          Value: true
+          Value: false
         reference/pedestal:
-          Value: true
+          Value: false
         reference/pedestal_feet:
-          Value: true
+          Value: false
         reference/right_arm_base_link:
-          Value: true
+          Value: false
         reference/right_arm_itb:
-          Value: true
+          Value: false
         reference/right_connector_plate_base:
-          Value: true
+          Value: false
         reference/right_connector_plate_mount:
-          Value: true
+          Value: false
         reference/right_electric_gripper_base:
-          Value: true
+          Value: false
         reference/right_gripper_base:
-          Value: true
+          Value: false
         reference/right_gripper_l_finger:
-          Value: true
+          Value: false
         reference/right_gripper_l_finger_tip:
-          Value: true
+          Value: false
         reference/right_gripper_r_finger:
-          Value: true
+          Value: false
         reference/right_gripper_r_finger_tip:
-          Value: true
+          Value: false
         reference/right_gripper_tip:
-          Value: true
+          Value: false
         reference/right_hand:
-          Value: true
+          Value: false
         reference/right_hand_camera:
-          Value: true
+          Value: false
         reference/right_l0:
-          Value: true
+          Value: false
         reference/right_l1:
-          Value: true
+          Value: false
         reference/right_l1_2:
-          Value: true
+          Value: false
         reference/right_l2:
-          Value: true
+          Value: false
         reference/right_l2_2:
-          Value: true
+          Value: false
         reference/right_l3:
-          Value: true
+          Value: false
         reference/right_l4:
-          Value: true
+          Value: false
         reference/right_l4_2:
-          Value: true
+          Value: false
         reference/right_l5:
-          Value: true
+          Value: false
         reference/right_l6:
-          Value: true
+          Value: false
         reference/right_torso_itb:
-          Value: true
+          Value: false
         reference/right_wrist:
-          Value: true
+          Value: false
         reference/screen:
-          Value: true
+          Value: false
         reference/torso:
-          Value: true
+          Value: false
         right_arm_base_link:
-          Value: true
+          Value: false
         right_arm_itb:
-          Value: true
+          Value: false
         right_connector_plate_base:
-          Value: true
+          Value: false
         right_connector_plate_mount:
-          Value: true
+          Value: false
         right_electric_gripper_base:
-          Value: true
+          Value: false
         right_gripper_base:
-          Value: true
+          Value: false
         right_gripper_l_finger:
-          Value: true
+          Value: false
         right_gripper_l_finger_tip:
-          Value: true
+          Value: false
         right_gripper_r_finger:
-          Value: true
+          Value: false
         right_gripper_r_finger_tip:
-          Value: true
+          Value: false
         right_gripper_tip:
-          Value: true
+          Value: false
         right_hand:
-          Value: true
+          Value: false
         right_hand_camera:
-          Value: true
+          Value: false
         right_l0:
-          Value: true
+          Value: false
         right_l1:
-          Value: true
+          Value: false
         right_l1_2:
-          Value: true
+          Value: false
         right_l2:
-          Value: true
+          Value: false
         right_l2_2:
-          Value: true
+          Value: false
         right_l3:
-          Value: true
+          Value: false
         right_l4:
-          Value: true
+          Value: false
         right_l4_2:
-          Value: true
+          Value: false
         right_l5:
-          Value: true
+          Value: false
         right_l6:
-          Value: true
+          Value: false
         right_torso_itb:
-          Value: true
+          Value: false
         right_wrist:
-          Value: true
+          Value: false
         screen:
-          Value: true
+          Value: false
         torso:
-          Value: true
+          Value: false
         world:
-          Value: true
+          Value: false
       Marker Scale: 1
       Name: TF
       Show Arrows: false
       Show Axes: true
       Show Names: false
       Tree:
-        camera_link:
-          camera_accel_frame:
-            camera_accel_optical_frame:
-              {}
-          camera_color_frame:
-            camera_color_optical_frame:
-              {}
-          camera_depth_frame:
-            camera_depth_optical_frame:
-              {}
-          camera_gyro_frame:
-            camera_gyro_optical_frame:
-              {}
-          camera_infra1_frame:
-            camera_infra1_optical_frame:
-              {}
-          camera_infra2_frame:
-            camera_infra2_optical_frame:
-              {}
         world:
           base:
+            camera_depth_frame:
+              camera_depth_optical_frame:
+                {}
             controller_box:
               {}
             pedestal:
@@ -735,9 +720,139 @@ Visualization Manager:
       Marker Topic: /visualization_marker
       Name: Marker
       Namespaces:
-        my_namespace: true
+        {}
       Queue Size: 100
       Value: true
+    - Alpha: 1
+      Class: rviz/RobotModel
+      Collision Enabled: false
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        controller_box:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        head:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        head_camera:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        pedestal:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        pedestal_feet:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_arm_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_arm_itb:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        right_hand:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_hand_camera:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        right_l0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_l1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_l1_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_l2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_l2_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_l3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_l4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_l4_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_l5:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_l6:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_torso_itb:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        right_wrist:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        screen:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        torso:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+      Name: RobotModel
+      Robot Description: robot_description
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -781,10 +896,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.21520346403121948
+      Pitch: 0.3652034401893616
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.713493347167969
+      Yaw: 2.0634918212890625
     Saved: ~
 Window Geometry:
   Displays:

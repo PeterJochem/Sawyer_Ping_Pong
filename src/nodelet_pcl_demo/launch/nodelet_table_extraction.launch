@@ -3,20 +3,22 @@
   <arg name="vis" default="true" doc="Launch RViZ"/>
   <arg name="source" default="realsense" doc="Describes the camera we are using"/>
   
-  <arg name="x" default="1" doc="Description"/>
-  <arg name="y" default="1" doc="Description"/>
-  <arg name="z" default="1" doc="Description"/>
 
-  <arg name="qx" default="1" doc="Description"/>
+  <arg name="x" default="0.89535" doc="Description"/>
+  <arg name="y" default="-0.88265" doc="Description"/>
+  <arg name="z" default="2.16535" doc="Description"/>
+
+
+  <arg name="qx" default="0" doc="Description"/>
   <arg name="qy" default="1" doc="Description"/>
-  <arg name="qz" default="1" doc="Description"/>
-  <arg name="qw" default="1" doc="Description"/>
+  <arg name="qz" default="0" doc="Description"/>
+  <arg name="qw" default="0" doc="Description"/>
 
 
 
   <!-- static_transform_publisher x y z qx qy qz qw frame_id child_frame_id  period_in_ms -->
   <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="$(arg x) $(arg y) $(arg z) $(arg qx) $(arg qy) 
-	$(arg qz) $(arg qw) base camera_depth_frame 100" />
+	$(arg qz) $(arg qw)  base camera_depth_frame 100" />
   
   <!-- intel realsense, which publishes on /camera/depth/color/points instead of /camera/depth/points -->
   <remap from="/camera/depth/color/points" to="/camera/depth/points" />

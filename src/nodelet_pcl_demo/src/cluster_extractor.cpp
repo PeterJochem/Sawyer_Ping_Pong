@@ -280,9 +280,17 @@ class ClusterExtractor
 				myVelocity.x = (float(averageX - priorX) ) / (dt);
 				myVelocity.y = (float(averageY - priorY) ) / (dt);
 				myVelocity.z = (float(averageZ - priorZ) ) / (dt);
-
+				
 				velocity_pub.publish(myVelocity);		
 				ros::spinOnce();
+			
+				// Update the prior's fields
+				priorX = point_in_base_frame.point.x;
+                                priorY = point_in_base_frame.point.y;
+                                priorZ = point_in_base_frame.point.z;
+
+                                t_prior = ros::Time::now();
+					
 			}
 
 			visualization_msgs::Marker marker;
@@ -292,9 +300,9 @@ class ClusterExtractor
 			marker.id = 0;
 			marker.type = visualization_msgs::Marker::SPHERE;
 			marker.action = visualization_msgs::Marker::ADD;
-			marker.pose.position.x = averageX;
-			marker.pose.position.y = averageY;
-			marker.pose.position.z = averageZ;
+			marker.pose.position.x = point_in_base_frame.point.x;
+			marker.pose.position.y = point_in_base_frame.point.y;
+			marker.pose.position.z = point_in_base_frame.point.z;
 			marker.pose.orientation.x = 0.0;
 			marker.pose.orientation.y = 0.0;
 			marker.pose.orientation.z = 0.0;
