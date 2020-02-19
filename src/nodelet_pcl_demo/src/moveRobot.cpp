@@ -25,7 +25,7 @@ geometry_msgs::Point priorLocation;
 
 
 // Function prototypes 
-void computePose(nodelet_pcl_demo::dataPoint);
+void computePose(geometry_msgs::PointStamped);
 
 
 int main(int argc, char **argv) {
@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 
 /* Describe this method 
 */
-void computePose(nodelet_pcl_demo::dataPoint data) {
+void computePose(geometry_msgs::PointStamped data) {
 
 	// Take the input data and use it to set the moveIt node's code
 	

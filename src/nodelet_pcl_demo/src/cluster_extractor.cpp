@@ -102,7 +102,7 @@ class ClusterExtractor
 
 			// Lets the system know we are going to publish a geometry_msg::Point on the topic Ball_Location
 			// The int is the number to keep in the buffer before starting to throw away the old messages
-			position_pub = n_.advertise<nodelet_pcl_demo::dataPoint>("/ball_Location", 3);
+			position_pub = n_.advertise<geometry_msgs::PointStamped>("/ball_Location", 3);
 
 			// filtered_cloud_pub = n_.advertise<PCLCloud>("/filtered_cloud", 5);
 
@@ -230,8 +230,7 @@ class ClusterExtractor
 			currentLocation.myPoint.x = averageX;
 			currentLocation.myPoint.y = averageY;
 			currentLocation.myPoint.z = averageZ;	
-
-
+			
 			geometry_msgs::PointStamped point_in_camera_frame; 
 			geometry_msgs::PointStamped point_in_base_frame;
 
@@ -257,16 +256,13 @@ class ClusterExtractor
 
 			// loop_rate.sleep();
 
-			// Publish the centroid's center
-			//
-
 			// Compute the new velocity
 			geometry_msgs::Point myVelocity;
 			if ( ( (priorX == 0.0) && (priorY == 0.0) && (priorZ == 0.0) ) ) {
 				// Don't publish velocity, simply record the velocity
-				priorX = averageX;
-				priorY = averageY;
-				priorZ = averageZ;	
+				priorX = point_in_base_frame.point.x;
+				priorY = point_in_base_frame.point.y;
+				priorZ = point_in_base_frame.point.z;
 
 				t_prior = ros::Time::now();
 			}
@@ -310,8 +306,6 @@ class ClusterExtractor
 			marker.color.r = 0.0;
 			marker.color.g = 1.0;
 			marker.color.b = 0.0;
-			// only if using a MESH_RESOURCE marker type:
-			// marker.mesh_resource = "package://pr2_description/meshes/base_v0/base.dae";
 			vis_pub.publish( marker );
 
 
