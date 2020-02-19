@@ -40,12 +40,12 @@ std::string filename;
 int markerIDCount = 0;
 
 
-// This is the volume to filter over in ____ frame?
+// This is the volume to filter over in the ROBOT'S FRAME
 double filter_minX = 0.0;
-double filter_maxX = 2.0;
+double filter_maxX = 1.5;
 
-double filter_minY = 0.0;
-double filter_maxY = 2.0;
+double filter_minY = -1.5;
+double filter_maxY = 0.0;
 
 double filter_minZ = 0.0;
 double filter_maxZ = 2.0;
@@ -113,9 +113,36 @@ class ClusterExtractor
 			// listener = TransformListener(ros::Duration max_cache_time=ros::Duration(DEFAULT_CACHE_TIME), bool spin_thread=true);
 			
 			// This publishes the corners of the volume we are filtering over
-			publishVolumeMarkers();
+			// publishVolumeMarkers();
 		}
-	
+		
+		/* Describe here
+		 */
+		geometry_msgs::PointStamped convertPointToRobotFrame(double x, double y, double z) {
+			
+
+			// listener.transformPoint("base", point_in_camera_frame, point_in_base_frame);
+			
+			geometry_msgs::PointStamped point_in_camera_frame;
+                        geometry_msgs::PointStamped point_in_base_frame;
+
+			point_in_base_frame.header.frame_id = "base";
+                        point_in_base_frame.header.stamp = ros::Time();
+			point_in_base_frame.point.x = x; 
+			point_in_base_frame.point.y = y; 
+			point_in_base_frame.point.z = z;
+
+                        point_in_camera_frame.header.frame_id = "camera_depth_frame";
+                        point_in_camera_frame.header.stamp = ros::Time();
+			
+			listener.transformPoint("camera_depth_frame", point_in_base_frame, point_in_camera_frame);
+			
+			return point_in_camera_frame;
+		}
+
+		
+		/* Describe here
+		 */
 		void publishMarker(double x, double y, double z) {
 
 				
@@ -150,15 +177,22 @@ class ClusterExtractor
 		 */
 		void publishVolumeMarkers(void) {
 			
-			publishMarker(maxX, maxY, maxZ);
-			publishMarker(maxX, maxY, 0);
-			publishMarker(maxX, 0, 0);
-			publishMarker(0, maxY, maxZ);
-			publishMarker(0, 0, maxZ);
-			publishMarker(0, maxY, 0);
-			publishMarker(maxX, 0, maxZ);
-			publishMarker(0, 0, 0);
-
+			geometry_msgs::PointStamped points[8];
+			
+			points[0] = convertPointToRobotFrame(filter_maxX, filter_maxY, filter_maxZ);
+			points[1] = convertPointToRobotFrame(filter_maxX, filter_maxY, filter_minZ);
+		        points[2] = convertPointToRobotFrame(filter_maxX, filter_minY, filter_minZ);
+			points[3] = convertPointToRobotFrame(filter_minX, filter_maxY, filter_maxZ);
+			points[4] = convertPointToRobotFrame(filter_minX, filter_minY, filter_maxZ);
+			points[5] = convertPointToRobotFrame(filter_minX, filter_maxY, filter_minZ);
+			points[6] = convertPointToRobotFrame(filter_maxX, filter_minY, filter_maxZ);
+			points[7] = convertPointToRobotFrame(filter_minX, filter_minY, filter_minZ);
+			
+					// Fix with array's length
+			for (int i = 0; i < 8; ++i) {
+				publishMarker( points[i].point.x, points[i].point.y, points[i].point.z  );
+			}
+			
 		}
 
 
@@ -399,11 +433,12 @@ void publishTransform(void) {
 	return;
 }	
 
-
 int main(int argc, char **argv) {
 
 	ros::init(argc, argv, "cluster_extractor");
-	publishTransform();
+	// publishTransform();
+	//convertVolumeToRobotFrame();
+	
 	sleep(5);
 
 	ClusterExtractor extractor;
