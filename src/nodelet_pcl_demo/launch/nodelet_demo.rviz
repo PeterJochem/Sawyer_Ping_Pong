@@ -29,7 +29,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud2
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -328,8 +328,8 @@ Visualization Manager:
     - Alpha: 0.20000000298023224
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 2.116000175476074
-        Min Value: 0.4970000088214874
+        Max Value: 4.023138999938965
+        Min Value: 0.5970302820205688
         Value: true
       Axis: Z
       Channel Name: z
@@ -720,7 +720,7 @@ Visualization Manager:
       Marker Topic: /visualization_marker
       Name: Marker
       Namespaces:
-        {}
+        my_namespace: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -858,7 +858,7 @@ Visualization Manager:
     Background Color: 48; 48; 48
     Default Light: true
     Fixed Frame: base
-    Frame Rate: 30
+    Frame Rate: 60
   Name: root
   Tools:
     - Class: rviz/Interact
@@ -896,10 +896,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.3652034401893616
+      Pitch: -0.059796568006277084
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.0634918212890625
+      Yaw: 2.1834919452667236
     Saved: ~
 Window Geometry:
   Displays:

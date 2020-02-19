@@ -36,36 +36,32 @@ typedef pcl::PointXYZ PointT;
 typedef pcl::PointCloud<pcl::PointXYZ> PCLCloud;
 std::string filename;
 
+// Need unique id for each marker in RVIZ
+int markerIDCount = 0;
+
+
+// This is the volume to filter over in ____ frame?
+double filter_minX = 0.0;
+double filter_maxX = 2.0;
+
+double filter_minY = 0.0;
+double filter_maxY = 2.0;
+
+double filter_minZ = 0.0;
+double filter_maxZ = 2.0;
+
+double maxX = 2.0;
+double maxY = 2.0;
+double maxZ = 2.0;
+
+
+
 // These are the prior values we read from the system
 double priorX = 0.0;
 double priorY = 0.0;
 double priorZ = 0.0;
 
 // I obtained this matrix by measuring the fixed offset
-double T_Robot_Camera[4][4] = {  {1.0, 0.0, 0.0, 0.86995}, {0.0, 1.0, 0.0, 0.9906}, {0.0, 0.0, -1.0, 2.1082}, {0.0, 0.0, 0.0, 1.0}  };
-/*
-   T_Robot_Camera[0][0] = 1.0;
-   T_Robot_Camera[1][0] = 0.0;
-   T_Robot_Camera[2][0] = 0.0;
-   T_Robot_Camera[3][0] = 0.0;
-
-   T_Robot_Camera[0][1] = 0.0;
-   T_Robot_Camera[1][1] = 1.0;
-   T_Robot_Camera[2][1] = 0.0;
-   T_Robot_Camera[3][1] = 0.0;
-
-   T_Robot_Camera[0][2] = 0.0;
-   T_Robot_Camera[1][2] = 0.0;
-   T_Robot_Camera[2][2] = -1.0;
-   T_Robot_Camera[3][2] = 0.0;
-
-// These measurements are in meters
-T_Robot_Camera[0][3] = 0.866995;
-T_Robot_Camera[1][3] = -1 * 0.9906;
-T_Robot_Camera[2][3] = 2.1082;
-T_Robot_Camera[3][3] = 1.0;
-*/
-
 
 // This is the prior data point's time stamp data 
 // ros::timeNow() returns a type with two fields
@@ -111,15 +107,65 @@ class ClusterExtractor
 
 			velocity_pub = n_.advertise<geometry_msgs::Point>("/ball_velocity", 3);
 
-			vis_pub = n_.advertise<visualization_msgs::Marker>("/visualization_marker", 0);
+			vis_pub = n_.advertise<visualization_msgs::Marker>("/visualization_marker", 10);
 			
 			// Construct the transform listener?	
 			// listener = TransformListener(ros::Duration max_cache_time=ros::Duration(DEFAULT_CACHE_TIME), bool spin_thread=true);
+			
+			// This publishes the corners of the volume we are filtering over
+			publishVolumeMarkers();
+		}
+	
+		void publishMarker(double x, double y, double z) {
+
+				
+			visualization_msgs::Marker marker;
+                        marker.header.frame_id = "base";
+                        marker.header.stamp = ros::Time();
+                        marker.ns = "my_namespace";
+
+                        marker.id = markerIDCount;
+                        markerIDCount = markerIDCount + 1;
+
+                        marker.type = visualization_msgs::Marker::SPHERE;
+                        marker.action = visualization_msgs::Marker::ADD;
+                        marker.pose.position.x = x;
+                        marker.pose.position.y = y;
+                        marker.pose.position.z = z;
+                        marker.pose.orientation.x = 0.0;
+                        marker.pose.orientation.y = 0.0;
+                        marker.pose.orientation.z = 0.0;
+                        marker.pose.orientation.w = 1.0;
+                        marker.scale.x = 0.1;
+                        marker.scale.y = 0.1;
+                        marker.scale.z = 0.1;
+                        marker.color.a = 0.5; // Don't forget to set the alpha!
+                        marker.color.r = 0.0;
+                        marker.color.g = 0.0;
+                        marker.color.b = 1.0;
+                        vis_pub.publish( marker );
+		}
+
+		/* Describe this method here
+		 */
+		void publishVolumeMarkers(void) {
+			
+			publishMarker(maxX, maxY, maxZ);
+			publishMarker(maxX, maxY, 0);
+			publishMarker(maxX, 0, 0);
+			publishMarker(0, maxY, maxZ);
+			publishMarker(0, 0, maxZ);
+			publishMarker(0, maxY, 0);
+			publishMarker(maxX, 0, maxZ);
+			publishMarker(0, 0, 0);
 
 		}
 
+
 		// this function gets called every time new pcl data comes in
 		void cloudcb(const sensor_msgs::PointCloud2ConstPtr &scan)    {
+			
+			publishVolumeMarkers();
 
 			using pcl_ptr = pcl::PointCloud<pcl::PointXYZ>::Ptr;
 
@@ -171,7 +217,7 @@ class ClusterExtractor
 			pass.setInputCloud(cloud_filtered);
 			//pass.setInputCloud(original_cloud);
 			pass.setFilterFieldName("y");
-			pass.setFilterLimits(0, 1*(0.9906 + 0.2) );
+			pass.setFilterLimits(0, 2*(0.9906 + 0.2) );
 			pass.setFilterLimitsNegative(false);
 			//pass.filter(*original_cloud);
 			pass.filter(*cloud_filtered);
@@ -297,7 +343,10 @@ class ClusterExtractor
 			marker.header.frame_id = "base";
 			marker.header.stamp = ros::Time();
 			marker.ns = "my_namespace";
-			marker.id = 0;
+			
+			marker.id = markerIDCount;
+			markerIDCount = markerIDCount + 1;
+
 			marker.type = visualization_msgs::Marker::SPHERE;
 			marker.action = visualization_msgs::Marker::ADD;
 			marker.pose.position.x = point_in_base_frame.point.x;
@@ -315,8 +364,7 @@ class ClusterExtractor
 			marker.color.g = 1.0;
 			marker.color.b = 0.0;
 			vis_pub.publish( marker );
-
-
+				
 			// Compute the position it will cross the plane
 			// First, must define the plane to intersect the ball in
 
