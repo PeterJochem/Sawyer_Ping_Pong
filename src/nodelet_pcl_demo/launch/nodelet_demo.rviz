@@ -29,7 +29,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -770,6 +770,49 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        right_connector_plate_base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_connector_plate_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        right_electric_gripper_base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_gripper_base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        right_gripper_l_finger:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_gripper_l_finger_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_gripper_r_finger:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_gripper_r_finger_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_gripper_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         right_hand:
           Alpha: 1
           Show Axes: false
@@ -888,18 +931,18 @@ Visualization Manager:
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.07936588674783707
-        Y: -0.10336504131555557
-        Z: 0.996982753276825
+        X: 1.1423437595367432
+        Y: -0.16721345484256744
+        Z: 1.7974423170089722
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: -0.059796568006277084
+      Pitch: 1.320202112197876
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.1834919452667236
+      Yaw: 0.053503792732954025
     Saved: ~
 Window Geometry:
   Displays:

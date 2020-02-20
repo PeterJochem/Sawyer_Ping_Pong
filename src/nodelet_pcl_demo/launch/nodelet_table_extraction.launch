@@ -9,8 +9,8 @@
   <arg name="z" default="2.16535" doc="Description"/>
 
 
-  <arg name="qx" default="0" doc="Description"/>
-  <arg name="qy" default="1" doc="Description"/>
+  <arg name="qx" default="1.0" doc="Description"/>
+  <arg name="qy" default="0.0" doc="Description"/>
   <arg name="qz" default="0" doc="Description"/>
   <arg name="qw" default="0" doc="Description"/>
 
