@@ -26,37 +26,7 @@
 #include <tf/transform_listener.h>
 #include <unistd.h>
 
-
-/*---------------------------------------------------------------------------
-//  Global Variables
-//  ---------------------------------------------------------------------------
-*/ 
 typedef pcl::PointCloud<pcl::PointXYZ> PCLCloud;
-
-// This is the volume to filter over in the ROBOT'S FRAME
-// FIX ME - change this so that we define the volume via the launch file 
-double filter_minX = 0.0;
-double filter_maxX = 0.75;
-
-double filter_minY = -1.5;
-double filter_maxY = -0.3;
-
-double filter_minZ = 0.0;
-double filter_maxZ = 2.0;
-
-// Values in the camera frame
-double filter_minX_camera_frame = 1.0;
-double filter_maxX_camera_frame = 1.0;
-
-double filter_minY_camera_frame = 1.0;
-double filter_maxY_camera_frame = 1.0;
-
-double filter_minZ_camera_frame = 1.0;
-double filter_maxZ_camera_frame = 1.0;
-
-// This records if we have published the volume markers yet
-// bool hasPublishedVolume = false;
-
 
 /* This class will handle point cloud processing
 */
@@ -85,12 +55,31 @@ class ClusterExtractor {
 		// ros::timeNow() returns a type with two fields
 		// http://wiki.ros.org/roscpp/Overview/Time
 		ros::Time t_prior;
-		
 
 		// Need unique id for each marker in RVIZ
 		int markerIDCount;
 
+		// These define the volume in the robot's base frame
+		// that we are filtering over
+		double filter_minX = 0.0;
+		double filter_maxX = 0.75;
 
+		double filter_minY = -1.5;
+		double filter_maxY = -0.3;
+
+		double filter_minZ = 0.0;
+		double filter_maxZ = 2.0;
+
+		// Values in the camera frame
+		// We will set these when we initilaize the object
+		double filter_minX_camera_frame = 1.0;
+		double filter_maxX_camera_frame = 1.0;
+
+		double filter_minY_camera_frame = 1.0;
+		double filter_maxY_camera_frame = 1.0;
+
+		double filter_minZ_camera_frame = 1.0;
+		double filter_maxZ_camera_frame = 1.0;
 
 	public:
 		// This is the class's constructor
@@ -129,11 +118,28 @@ class ClusterExtractor {
 			// ros::timeNow() returns a type with two fields
 			// http://wiki.ros.org/roscpp/Overview/Time
 			ros::Time t_prior;
-	
-			
+
 			// Need unique id for each marker in RVIZ
 			markerIDCount = 0;
 
+			filter_minX = 0.0;
+			filter_maxX = 0.75;
+
+			filter_minY = -1.5;
+			filter_maxY = -0.3;
+
+			filter_minZ = 0.0;
+			filter_maxZ = 2.0;
+
+			// Values in the camera frame
+			filter_minX_camera_frame = 1.0;
+			filter_maxX_camera_frame = 1.0;
+
+			filter_minY_camera_frame = 1.0;
+			filter_maxY_camera_frame = 1.0;
+
+			filter_minZ_camera_frame = 1.0;
+			filter_maxZ_camera_frame = 1.0;
 		}
 
 
@@ -209,7 +215,7 @@ class ClusterExtractor {
 		 * show the volume over which we are filtering
 		 * Input: void
 		 * Returns: void
-		*/
+		 */
 		void publishVolumeMarkers(void) {
 
 			// Define the points that define the volume's min and max dimensions	
