@@ -2,24 +2,43 @@
 
   <arg name="vis" default="true" doc="Launch RViZ"/>
   <arg name="source" default="realsense" doc="Describes the camera we are using"/>
-  
-
-  <arg name="x" default="0.89535" doc="Description"/>
-  <arg name="y" default="-0.88265" doc="Description"/>
-  <arg name="z" default="2.16535" doc="Description"/>
-
-
-  <arg name="qx" default="1.0" doc="Description"/>
-  <arg name="qy" default="0.0" doc="Description"/>
-  <arg name="qz" default="0" doc="Description"/>
-  <arg name="qw" default="0" doc="Description"/>
+ 	
+  <!-- Load the yaml file in describing the enviroment --> 
+  <arg name="myFile" default="$(find sawyer_ping_pong)/urdf/box.yaml"/>   
+  <rosparam command="load" file="$(arg myFile)"/>  
 
 
+  <!-- Define the quaternion from the robot's base to the camera -->
+  <arg name="x_camera" default="0.89535" doc="Description"/>
+  <arg name="y_camera" default="-0.88265" doc="Description"/>
+  <arg name="z_camera" default="2.16535" doc="Description"/>
+
+  <arg name="qx_camera" default="1.0" doc="Description"/>
+  <arg name="qy_camera" default="0.0" doc="Description"/>
+  <arg name="qz_camera" default="0" doc="Description"/>
+  <arg name="qw_camera" default="0" doc="Description"/>
+
+  <!-- Define the quaternion from the robot's base to the table -->
+  <arg name= "x_table" default="0.7" doc="Description"/>
+  <arg name="y_table" default="-1.5" doc="Description"/>
+  <arg name="z_table" default="0.1" doc="Description"/>
+
+  <arg name="qx_table" default="0.0" doc="Description"/>
+  <arg name="qy_table" default="0.0" doc="Description"/>
+  <arg name="qz_table" default="0.0" doc="Description"/>
+  <arg name="qw_table" default="1.0" doc="Description"/>
+	
+  <!-- Load the table's urdf into the param server so we can display it in RVIZ !-->
+  <param name="table_description" textfile="/home/peter/Desktop/WinterProject/catkin_ws/src/sawyer_ping_pong/urdf/box.urdf"/>
 
   <!-- static_transform_publisher x y z qx qy qz qw frame_id child_frame_id  period_in_ms -->
-  <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="$(arg x) $(arg y) $(arg z) $(arg qx) $(arg qy) 
-	$(arg qz) $(arg qw)  base camera_depth_frame 100" />
-  
+  <node pkg="tf" type="static_transform_publisher" name="base_camera_broadcaster" args="$(arg x_camera) $(arg y_camera) $(arg z_camera) 
+  $(arg qx_camera) $(arg qy_camera) $(arg qz_camera) $(arg qw_camera) base camera_depth_frame 100" />
+
+  <!-- static_transform_publisher x y z qx qy qz qw frame_id child_frame_id  period_in_ms -->
+  <node pkg="tf" type="static_transform_publisher" name="base_table_broadcaster" args="$(arg x_table) $(arg y_table) $(arg z_table) 
+  $(arg qx_table) $(arg qy_table) $(arg qz_table) $(arg qw_table)  base table 100" />
+
   <!-- intel realsense, which publishes on /camera/depth/color/points instead of /camera/depth/points -->
   <remap from="/camera/depth/color/points" to="/camera/depth/points" />
 
@@ -35,6 +54,7 @@
        downloaded from the PCL site. In the original PCD file, all data was
        behind the sensor if we consider the frame to be the `camera_depth_optical_frame` -->
   <group ns="pcd_reader" if="$(eval source =='pcd')">
+
     <node name="pcd_publisher" pkg="pcl_ros" type="pcd_to_pointcloud"
           args="$(find nodelet_pcl_demo)/launch/table_rotated.pcd 0.05">
       <remap from="cloud_pcd" to="/camera/depth/points" />
@@ -49,5 +69,9 @@
   <!-- start rviz if vis arg is true -->
   <node pkg="rviz" type="rviz" respawn="false" name="rviz" if="$(arg vis)"
         args="-d $(find nodelet_pcl_demo)/launch/nodelet_demo.rviz" />
+
+
+  <param name="table_description" textfile="$(find sawyer_ping_pong)/urdf/box.urdf" />
+
 
 </launch>

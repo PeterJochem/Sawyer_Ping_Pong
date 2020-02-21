@@ -499,7 +499,7 @@ int main(int argc, char **argv) {
 
 	// FIX ME - add pause to let ROS system get running
 	// FIX later	
-	sleep(5);
+	sleep(10);
 
 	ClusterExtractor extractor;
 
