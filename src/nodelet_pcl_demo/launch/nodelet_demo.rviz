@@ -217,6 +217,8 @@ Visualization Manager:
           Value: false
         screen:
           Value: false
+        table:
+          Value: false
         torso:
           Value: false
         world:
@@ -278,6 +280,8 @@ Visualization Manager:
                             {}
                 right_torso_itb:
                   {}
+            table:
+              {}
             torso:
               {}
           reference/base:
@@ -907,11 +911,15 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        my_box:
+        table:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
+        world:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
       Name: RobotModel
       Robot Description: table_description
       TF Prefix: ""
@@ -953,18 +961,18 @@ Visualization Manager:
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.6614147424697876
-        Y: 1.3967496156692505
-        Z: 0.7850552201271057
+        X: 7.498531818389893
+        Y: -3.8037800788879395
+        Z: 4.996587753295898
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.07520236074924469
+      Pitch: 0.7452024221420288
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.8716871738433838
+      Yaw: 5.59487247467041
     Saved: ~
 Window Geometry:
   Displays:

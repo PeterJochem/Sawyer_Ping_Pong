@@ -1,4 +1,6 @@
 #include <iostream>
+#include <stdlib.h>
+#include <sstream>
 #include <fstream>
 #include <memory>
 #include <ros/ros.h>
@@ -61,14 +63,16 @@ class ClusterExtractor {
 
 		// These define the volume in the robot's base frame
 		// that we are filtering over
-		double filter_minX = 0.0;
-		double filter_maxX = 0.75;
+		// load these as parameters into the ros server!!!!!
+		
+		double filter_minX;
+		double filter_maxX;
 
-		double filter_minY = -1.5;
-		double filter_maxY = -0.3;
+		double filter_minY;
+		double filter_maxY;
 
-		double filter_minZ = 0.0;
-		double filter_maxZ = 2.0;
+		double filter_minZ;
+		double filter_maxZ;
 
 		// Values in the camera frame
 		// We will set these when we initilaize the object
@@ -121,53 +125,134 @@ class ClusterExtractor {
 
 			// Need unique id for each marker in RVIZ
 			markerIDCount = 0;
+			
+			// Get the filter dimensions from the server
+			// These are defined in the launchfile
+			// They are defined in terms of the table
+			
+			n_.getParam("filter_minX", filter_minX);
+			n_.getParam("filter_maxX", filter_maxX);
+		
+			n_.getParam("filter_minY", filter_minY);
+                        n_.getParam("filter_maxY", filter_maxY);
+			
+			n_.getParam("filter_minZ", filter_minZ);
+                        n_.getParam("filter_maxZ", filter_maxZ);
+			
+			// Convert the filter dimensions into the base's frame
+			geometry_msgs::PointStamped minCorner = convertPointToRobotFrame(filter_minX, filter_minY, filter_minZ);
+			geometry_msgs::PointStamped maxCorner = convertPointToRobotFrame(filter_maxX, filter_maxY, filter_maxZ);
+			// Unpack the transformed point
+			filter_minX = minCorner.point.x;
+			filter_minY = minCorner.point.y;
+			filter_minZ = minCorner.point.z;
+			
+			filter_maxX = maxCorner.point.x;
+                        filter_maxY = maxCorner.point.y;
+                        filter_maxZ = maxCorner.point.z;
 
-			filter_minX = 0.0;
-			filter_maxX = 0.75;
 
-			filter_minY = -1.5;
-			filter_maxY = -0.3;
+			// Values in the camera's frame - we will set these later
+			n_.getParam("filter_minX_camera_frame", filter_minX_camera_frame);
+                        n_.getParam("filter_maxX_camera_frame", filter_maxX_camera_frame);
 
-			filter_minZ = 0.0;
-			filter_maxZ = 2.0;
+                        n_.getParam("filter_minY_camera_frame", filter_minY_camera_frame);
+                        n_.getParam("filter_maxY_camera_frame", filter_maxY_camera_frame);
 
-			// Values in the camera frame
-			filter_minX_camera_frame = 1.0;
-			filter_maxX_camera_frame = 1.0;
-
-			filter_minY_camera_frame = 1.0;
-			filter_maxY_camera_frame = 1.0;
-
-			filter_minZ_camera_frame = 1.0;
-			filter_maxZ_camera_frame = 1.0;
+                        n_.getParam("filter_minZ_camera_frame", filter_minZ_camera_frame);
+                        n_.getParam("filter_maxZ_camera_frame", filter_maxZ_camera_frame);	
+		
 		}
 
+		  /* This method converts a (x, y, z) location from the TABLE'S frame
+                 * into the robot's frame. This is for converting the parameters describing
+                 * the volume over which we will filter, defined in the camera's frame, into
+                 * parameters which define the volume in the camera's frame
+                 * Input: doubles x, y, and z which describe a points location in the robot's frame
+                 * Returns: geometry_msgs PointStamped of the input point in the camera's frame
+                 */
+                geometry_msgs::PointStamped convertPointToRobotFrame(double x, double y, double z) {
 
-		/* This method converts a (x, y, z) location from the robot's frame
-		 * into the camera's frame
+                        bool tableExists = false;
+
+                        tf::TransformListener listener;
+                        tf::StampedTransform transform;
+
+                        do {
+                                try {
+                                        listener.lookupTransform("table", "base", ros::Time(0), transform);
+                                        tableExists = true;
+                                }
+                                catch (tf::TransformException ex){
+                                         tableExists = false;
+                                }
+                        }
+
+                        while ( tableExists == false );
+
+
+                        geometry_msgs::PointStamped point_in_robot_frame;
+                        geometry_msgs::PointStamped point_in_table_frame;
+
+                        point_in_table_frame.header.frame_id = "table";
+                        point_in_table_frame.header.stamp = ros::Time();
+
+                        point_in_table_frame.point.x = x;
+                        point_in_table_frame.point.y = y;
+                        point_in_table_frame.point.z = z;
+
+                        point_in_robot_frame.header.frame_id = "base";
+                        point_in_robot_frame.header.stamp = ros::Time();
+
+                        listener.transformPoint("base", point_in_table_frame, point_in_robot_frame);
+
+                        return point_in_robot_frame;
+                }
+
+
+
+		/* This method converts a (x, y, z) location from the TABLE'S frame
+		 * into the camera's frame. This is for converting the parameters describing
+		 * the volume over which we will filter, defined in the camera's frame, into
+		 * parameters which define the volume in the camera's frame
 		 * Input: doubles x, y, and z which describe a points location in the robot's frame
 		 * Returns: geometry_msgs PointStamped of the input point in the camera's frame
 		 */ 
 		geometry_msgs::PointStamped convertPointToCameraFrame(double x, double y, double z) {
+			
+			bool tableExists = false;
+
+			tf::TransformListener listener;
+			tf::StampedTransform transform;
+				
+			do {
+				try {   
+                                        listener.lookupTransform("table", "camera_depth_frame", ros::Time(0), transform);
+                                	tableExists = true;
+				}
+                         	catch (tf::TransformException ex){
+                                         tableExists = false;
+                                }
+			}
+
+			while ( tableExists == false );
+
 
 			geometry_msgs::PointStamped point_in_camera_frame;
-			geometry_msgs::PointStamped point_in_base_frame;
+			geometry_msgs::PointStamped point_in_table_frame;
 
-			point_in_base_frame.header.frame_id = "base";
-			point_in_base_frame.header.stamp = ros::Time();
-			point_in_base_frame.point.x = x; 
-			point_in_base_frame.point.y = y; 
-			point_in_base_frame.point.z = z;
+			point_in_table_frame.header.frame_id = "table";
+			point_in_table_frame.header.stamp = ros::Time();
+			
+			point_in_table_frame.point.x = x; 
+			point_in_table_frame.point.y = y; 
+			point_in_table_frame.point.z = z;
 
 			point_in_camera_frame.header.frame_id = "camera_depth_frame";
 			point_in_camera_frame.header.stamp = ros::Time();
 
-			point_in_base_frame.header.frame_id = "base";
 
-			// Remember to set the time stamp
-			point_in_camera_frame.header.stamp = ros::Time();
-
-			listener.transformPoint("camera_depth_frame", point_in_base_frame, point_in_camera_frame);
+			listener.transformPoint("camera_depth_frame", point_in_table_frame, point_in_camera_frame);
 
 			return point_in_camera_frame;
 		}
@@ -221,33 +306,42 @@ class ClusterExtractor {
 			// Define the points that define the volume's min and max dimensions	
 			// We will define the volume in the table's frame - but must 
 			// convert them to the camera's frame in order to applt the filter
-			geometry_msgs::PointStamped min_point_in_robot_frame;
-			geometry_msgs::PointStamped max_point_in_robot_frame;
+			geometry_msgs::PointStamped min_point_in_table_frame;
+			geometry_msgs::PointStamped max_point_in_table_frame;
 
 			// Declare objects to store the point location from above
 			// but in the camera's frame
 			geometry_msgs::PointStamped min_point_in_camera_frame;
 			geometry_msgs::PointStamped max_point_in_camera_frame;
-
+			
+			geometry_msgs::PointStamped min_point_in_robot_frame;
+                        geometry_msgs::PointStamped max_point_in_robot_frame;
 
 			// Set the points dimensions
 			// FIX ME
 			// FIX ME - pass the filter dimensions in through the command line
 			// filter_minDIMENSION are globals that describe the volume above
 			// the table we care about 
-			min_point_in_robot_frame.point.x = filter_minX; 
-			min_point_in_robot_frame.point.y = filter_minY;
-			min_point_in_robot_frame.point.z = filter_minZ;
+			min_point_in_table_frame.point.x = filter_minX; 
+			min_point_in_table_frame.point.y = filter_minY;
+			min_point_in_table_frame.point.z = filter_minZ;
 
-			max_point_in_robot_frame.point.x = filter_maxX;
-			max_point_in_robot_frame.point.y = filter_maxY;
-			max_point_in_robot_frame.point.z = filter_maxZ;
+			max_point_in_table_frame.point.x = filter_maxX;
+			max_point_in_table_frame.point.y = filter_maxY;
+			max_point_in_table_frame.point.z = filter_maxZ;
 
 			// Convert the points to the camera's frame - needed to apply volume filter
-			min_point_in_camera_frame = convertPointToCameraFrame(min_point_in_robot_frame.point.x, 
-					min_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z);
-			max_point_in_camera_frame = convertPointToCameraFrame(max_point_in_robot_frame.point.x, 
-					max_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z); 
+			min_point_in_camera_frame = convertPointToCameraFrame(min_point_in_table_frame.point.x, 
+					min_point_in_table_frame.point.y, min_point_in_table_frame.point.z);
+			max_point_in_camera_frame = convertPointToCameraFrame(max_point_in_table_frame.point.x, 
+					max_point_in_table_frame.point.y, max_point_in_table_frame.point.z); 
+
+			// Convert the table frame's point to the robot base's frame
+			min_point_in_robot_frame = convertPointToRobotFrame(min_point_in_table_frame.point.x,
+                                        min_point_in_table_frame.point.y, min_point_in_table_frame.point.z);
+                        max_point_in_robot_frame = convertPointToRobotFrame(max_point_in_table_frame.point.x,
+                                        max_point_in_table_frame.point.y, max_point_in_table_frame.point.z);
+
 
 			// Now update the global variables to avoid recomputing this 
 			// transoformation from one frame to another 	
@@ -263,14 +357,31 @@ class ClusterExtractor {
 			// This is for the visualization in RVIZ	
 			// These define the volume's 8 corners in RVIZ
 			// These points are defined in the robot's frame
-			publishMarker(filter_maxX, filter_maxY, filter_maxZ);
-			publishMarker(filter_maxX, filter_maxY, filter_minZ);
-			publishMarker(filter_maxX, filter_minY, filter_minZ);
-			publishMarker(filter_minX, filter_maxY, filter_maxZ);
-			publishMarker(filter_minX, filter_minY, filter_maxZ);
-			publishMarker(filter_minX, filter_maxY, filter_minZ);
-			publishMarker(filter_maxX, filter_minY, filter_maxZ);
-			publishMarker(filter_minX, filter_minY, filter_minZ);
+			
+			
+			/* char* frame = "table";	
+			publishMarker(filter_maxX, filter_maxY, filter_maxZ, frame);
+			publishMarker(filter_maxX, filter_maxY, filter_minZ, frame);
+			publishMarker(filter_maxX, filter_minY, filter_minZ, frame);
+			publishMarker(filter_minX, filter_maxY, filter_maxZ, frame);
+			publishMarker(filter_minX, filter_minY, filter_maxZ, frame);
+			publishMarker(filter_minX, filter_maxY, filter_minZ, frame);
+			publishMarker(filter_maxX, filter_minY, filter_maxZ, frame);
+			publishMarker(filter_minX, filter_minY, filter_minZ, frame);
+			*/
+
+				
+			publishMarker(min_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z);
+			publishMarker(min_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z);
+			publishMarker(min_point_in_robot_frame.point.x, max_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z);
+			publishMarker(min_point_in_robot_frame.point.x, max_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z);
+			
+			publishMarker(max_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z);
+			publishMarker(max_point_in_robot_frame.point.x, max_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z);
+			publishMarker(max_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z);
+			publishMarker(max_point_in_robot_frame.point.x, max_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z);
+			
+
 		}
 
 		/* This method simply computes the min of two numbers
@@ -315,7 +426,9 @@ class ClusterExtractor {
 			if ( hasPublishedVolume == false ) {	
 				publishVolumeMarkers();
 				hasPublishedVolume = true;
+				return;
 			}
+			
 
 			using pcl_ptr = pcl::PointCloud<pcl::PointXYZ>::Ptr;
 
@@ -499,7 +612,7 @@ int main(int argc, char **argv) {
 
 	// FIX ME - add pause to let ROS system get running
 	// FIX later	
-	sleep(10);
+	// sleep(20);
 
 	ClusterExtractor extractor;
 
