@@ -1,17 +1,10 @@
 
-filter_minX: -1.0
-filter_maxX: -0.1
-filter_minY: 0.4
-filter_maxY: 1.75
-filter_minZ: 0
-filter_maxZ: 2.0
-
-filter_minX_camera_frame: 1.0
-filter_maxX_camera_frame: 1.0
-filter_minY_camera_frame: 1.0 
-filter_maxY_camera_frame: 1.0
-filter_minZ_camera_frame: 1.0
-filter_maxZ_camera_frame: 1.0
+filter_minX_table_frame: -0.6
+filter_maxX_table_frame: 0.3
+filter_minY_table_frame: 0.5
+filter_maxY_table_frame: -0.7
+filter_minZ_table_frame: 0
+filter_maxZ_table_frame: 1.0
 
 
 

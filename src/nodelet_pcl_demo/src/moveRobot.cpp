@@ -19,10 +19,6 @@
 
 #include <nodelet_pcl_demo/dataPoint.h>
 
-// Globals
-geometry_msgs::Point priorLocation;
-// Globals
-
 
 // Function prototypes 
 void computePose(geometry_msgs::PointStamped);
@@ -32,9 +28,6 @@ int main(int argc, char **argv) {
 
 
 	ros::init(argc, argv, "myMoveRobot_Node");
-	// ClusterExtractor extractor;
-
-	// Subscribe to /ball_Location
 
 	// Pull the time stamps from the data
 	// Make sure they exist/make sense

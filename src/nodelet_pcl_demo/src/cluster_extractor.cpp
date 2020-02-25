@@ -42,6 +42,10 @@ class ClusterExtractor {
 		ros::Publisher filtered_cloud_pub;
 		ros::Publisher vis_pub;
 
+		// This will publish a custom message type that 
+		// will contain the ball's velocity and position
+		ros::Publisher dataPoints;
+
 		tf::TransformBroadcaster br;
 		tf::TransformListener listener;
 
@@ -61,18 +65,31 @@ class ClusterExtractor {
 		// Need unique id for each marker in RVIZ
 		int markerIDCount;
 
-		// These define the volume in the robot's base frame
-		// that we are filtering over
+		// These define the volume in the robot's frame
+		// I store these volume values in the class so that I can avoid 
+		// converting to and from frames multiple times
+		// This allows me to do one conversion and store the values
 		// load these as parameters into the ros server!!!!!
 		
-		double filter_minX;
-		double filter_maxX;
+		double filter_minX_robot_frame;
+		double filter_maxX_robot_frame;
 
-		double filter_minY;
-		double filter_maxY;
+		double filter_minY_robot_frame;
+		double filter_maxY_robot_frame;
 
-		double filter_minZ;
-		double filter_maxZ;
+		double filter_minZ_robot_frame;
+		double filter_maxZ_robot_frame;
+			
+		// Same values as above but in the table's frame
+		double filter_minX_table_frame;
+                double filter_maxX_table_frame;
+
+                double filter_minY_table_frame;
+                double filter_maxY_table_frame;
+
+                double filter_minZ_table_frame;
+                double filter_maxZ_table_frame;
+
 
 		// Values in the camera frame
 		// We will set these when we initilaize the object
@@ -105,6 +122,9 @@ class ClusterExtractor {
 			velocity_pub = n_.advertise<geometry_msgs::Point>("/ball_velocity", 3);
 
 			vis_pub = n_.advertise<visualization_msgs::Marker>("/visualization_marker", 10);
+				
+			// How big to make the queue? 
+			dataPoints = n_.advertise<nodelet_pcl_demo::dataPoint>("/position_and_velocity", 1);	
 
 			// Construct the transform listener?	
 			// listener = TransformListener(ros::Duration max_cache_time=ros::Duration(DEFAULT_CACHE_TIME), bool spin_thread=true);
@@ -130,38 +150,28 @@ class ClusterExtractor {
 			// These are defined in the launchfile
 			// They are defined in terms of the table
 			
-			n_.getParam("filter_minX", filter_minX);
-			n_.getParam("filter_maxX", filter_maxX);
+			n_.getParam("filter_minX_table_frame", filter_minX_table_frame);
+			n_.getParam("filter_maxX_table_frame", filter_maxX_table_frame);
 		
-			n_.getParam("filter_minY", filter_minY);
-                        n_.getParam("filter_maxY", filter_maxY);
+			n_.getParam("filter_minY_table_frame", filter_minY_table_frame);
+                        n_.getParam("filter_maxY_table_frame", filter_maxY_table_frame);
 			
-			n_.getParam("filter_minZ", filter_minZ);
-                        n_.getParam("filter_maxZ", filter_maxZ);
+			n_.getParam("filter_minZ_table_frame", filter_minZ_table_frame);
+                        n_.getParam("filter_maxZ_table_frame", filter_maxZ_table_frame);
 			
 			// Convert the filter dimensions into the base's frame
-			geometry_msgs::PointStamped minCorner = convertPointToRobotFrame(filter_minX, filter_minY, filter_minZ);
-			geometry_msgs::PointStamped maxCorner = convertPointToRobotFrame(filter_maxX, filter_maxY, filter_maxZ);
-			// Unpack the transformed point
-			filter_minX = minCorner.point.x;
-			filter_minY = minCorner.point.y;
-			filter_minZ = minCorner.point.z;
+			geometry_msgs::PointStamped minCorner = convertPointToRobotFrame(filter_minX_table_frame, filter_minY_table_frame, filter_minZ_table_frame);
+			geometry_msgs::PointStamped maxCorner = convertPointToRobotFrame(filter_maxX_table_frame, filter_maxY_table_frame, filter_maxZ_table_frame);
 			
-			filter_maxX = maxCorner.point.x;
-                        filter_maxY = maxCorner.point.y;
-                        filter_maxZ = maxCorner.point.z;
+			// Unpack the transformed point
+			filter_minX_robot_frame = minCorner.point.x;
+			filter_minY_robot_frame = minCorner.point.y;
+			filter_minZ_robot_frame = minCorner.point.z;
+			
+			filter_maxX_robot_frame = maxCorner.point.x;
+                        filter_maxY_robot_frame = maxCorner.point.y;
+                        filter_maxZ_robot_frame = maxCorner.point.z;
 
-
-			// Values in the camera's frame - we will set these later
-			n_.getParam("filter_minX_camera_frame", filter_minX_camera_frame);
-                        n_.getParam("filter_maxX_camera_frame", filter_maxX_camera_frame);
-
-                        n_.getParam("filter_minY_camera_frame", filter_minY_camera_frame);
-                        n_.getParam("filter_maxY_camera_frame", filter_maxY_camera_frame);
-
-                        n_.getParam("filter_minZ_camera_frame", filter_minZ_camera_frame);
-                        n_.getParam("filter_maxZ_camera_frame", filter_maxZ_camera_frame);	
-		
 		}
 
 		  /* This method converts a (x, y, z) location from the TABLE'S frame
@@ -322,13 +332,13 @@ class ClusterExtractor {
 			// FIX ME - pass the filter dimensions in through the command line
 			// filter_minDIMENSION are globals that describe the volume above
 			// the table we care about 
-			min_point_in_table_frame.point.x = filter_minX; 
-			min_point_in_table_frame.point.y = filter_minY;
-			min_point_in_table_frame.point.z = filter_minZ;
+			min_point_in_table_frame.point.x = filter_minX_table_frame; 
+			min_point_in_table_frame.point.y = filter_minY_table_frame;
+			min_point_in_table_frame.point.z = filter_minZ_table_frame;
 
-			max_point_in_table_frame.point.x = filter_maxX;
-			max_point_in_table_frame.point.y = filter_maxY;
-			max_point_in_table_frame.point.z = filter_maxZ;
+			max_point_in_table_frame.point.x = filter_maxX_table_frame;
+			max_point_in_table_frame.point.y = filter_maxY_table_frame;
+			max_point_in_table_frame.point.z = filter_maxZ_table_frame;
 
 			// Convert the points to the camera's frame - needed to apply volume filter
 			min_point_in_camera_frame = convertPointToCameraFrame(min_point_in_table_frame.point.x, 
@@ -357,19 +367,6 @@ class ClusterExtractor {
 			// This is for the visualization in RVIZ	
 			// These define the volume's 8 corners in RVIZ
 			// These points are defined in the robot's frame
-			
-			
-			/* char* frame = "table";	
-			publishMarker(filter_maxX, filter_maxY, filter_maxZ, frame);
-			publishMarker(filter_maxX, filter_maxY, filter_minZ, frame);
-			publishMarker(filter_maxX, filter_minY, filter_minZ, frame);
-			publishMarker(filter_minX, filter_maxY, filter_maxZ, frame);
-			publishMarker(filter_minX, filter_minY, filter_maxZ, frame);
-			publishMarker(filter_minX, filter_maxY, filter_minZ, frame);
-			publishMarker(filter_maxX, filter_minY, filter_maxZ, frame);
-			publishMarker(filter_minX, filter_minY, filter_minZ, frame);
-			*/
-
 				
 			publishMarker(min_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z);
 			publishMarker(min_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z);
@@ -489,6 +486,8 @@ class ClusterExtractor {
 
 			float length = float(cloud_filtered->points.size() );
 
+			// IMPORTaNT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			// IMPORTANT!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			if ( length > 0) {
 				averageX = averageX / length; 
 				averageY = averageY / length;
@@ -506,11 +505,13 @@ class ClusterExtractor {
 			// The int is the number to keep in the buffer before starting to throw away the old messages
 			// ros::Publisher position_pub = n_.advertise<geometry_msgs::Point>("/Ball_Location", 1);
 
-			nodelet_pcl_demo::dataPoint currentLocation;
-			currentLocation.header.stamp = ros::Time::now();
-			currentLocation.myPoint.x = averageX;
-			currentLocation.myPoint.y = averageY;
-			currentLocation.myPoint.z = averageZ;	
+			// This object will hold the location and velocity of the ball
+			nodelet_pcl_demo::dataPoint currentState;
+			currentState.header.stamp = ros::Time::now();
+			
+			currentState.position.x = averageX;
+			currentState.position.y = averageY;
+			currentState.position.z = averageZ;	
 
 			geometry_msgs::PointStamped point_in_camera_frame; 
 			geometry_msgs::PointStamped point_in_base_frame;
@@ -528,7 +529,8 @@ class ClusterExtractor {
 			// Convert between the two frames
 			listener.transformPoint("base", point_in_camera_frame, point_in_base_frame);
 
-			position_pub.publish(point_in_base_frame);
+			
+			// position_pub.publish(point_in_base_frame);
 			// ros::spinOnce();
 
 			// Compute the new velocity
@@ -556,11 +558,12 @@ class ClusterExtractor {
 				// Compute dt
 				float dt = t_now - t_prior.toSec(); 
 
-				myVelocity.x = (float(averageX - priorX) ) / (dt);
-				myVelocity.y = (float(averageY - priorY) ) / (dt);
-				myVelocity.z = (float(averageZ - priorZ) ) / (dt);
+				// Compute the velocities
+				currentState.velocity.x = (float(averageX - priorX) ) / (dt);
+				currentState.velocity.y = (float(averageY - priorY) ) / (dt);
+				currentState.velocity.z = (float(averageZ - priorZ) ) / (dt);
 
-				velocity_pub.publish(myVelocity);		
+				// velocity_pub.publish(myVelocity);		
 				// ros::spinOnce();
 
 				// Update the prior's fields
@@ -570,6 +573,9 @@ class ClusterExtractor {
 
 				// Remember to timestamp the point
 				t_prior = ros::Time::now();
+			
+				// Publish the velocity and positions as a dataPoint
+				dataPoints.publish(currentState);
 			}
 
 			// Publish the marker of the ball's position to RVIZ
@@ -599,8 +605,6 @@ class ClusterExtractor {
 			marker.color.b = 0.0;
 			vis_pub.publish( marker );
 
-			// Compute the position it will cross the plane
-			// First, must define the plane to intersect the ball in
 		}
 };
 
