@@ -28,7 +28,13 @@
 #include <tf/transform_listener.h>
 #include <unistd.h>
 
+
 typedef pcl::PointCloud<pcl::PointXYZ> PCLCloud;
+
+// Function prototypes 
+void computePose(nodelet_pcl_demo::dataPoint);
+double calculateTime(double, double);
+double computeLocation(double, double, double, double);
 
 /* This class will handle point cloud processing
 */
@@ -41,6 +47,7 @@ class ClusterExtractor {
 		ros::Publisher velocity_pub;
 		ros::Publisher filtered_cloud_pub;
 		ros::Publisher vis_pub;
+		ros::Publisher pose_pub; 
 
 		// This will publish a custom message type that 
 		// will contain the ball's velocity and position
@@ -70,7 +77,7 @@ class ClusterExtractor {
 		// converting to and from frames multiple times
 		// This allows me to do one conversion and store the values
 		// load these as parameters into the ros server!!!!!
-		
+
 		double filter_minX_robot_frame;
 		double filter_maxX_robot_frame;
 
@@ -79,16 +86,16 @@ class ClusterExtractor {
 
 		double filter_minZ_robot_frame;
 		double filter_maxZ_robot_frame;
-			
+
 		// Same values as above but in the table's frame
 		double filter_minX_table_frame;
-                double filter_maxX_table_frame;
+		double filter_maxX_table_frame;
 
-                double filter_minY_table_frame;
-                double filter_maxY_table_frame;
+		double filter_minY_table_frame;
+		double filter_maxY_table_frame;
 
-                double filter_minZ_table_frame;
-                double filter_maxZ_table_frame;
+		double filter_minZ_table_frame;
+		double filter_maxZ_table_frame;
 
 
 		// Values in the camera frame
@@ -122,7 +129,9 @@ class ClusterExtractor {
 			velocity_pub = n_.advertise<geometry_msgs::Point>("/ball_velocity", 3);
 
 			vis_pub = n_.advertise<visualization_msgs::Marker>("/visualization_marker", 10);
-				
+			
+			pose_pub = n_.advertise<geometry_msgs::Pose>("/desired_pose", 1);	
+
 			// How big to make the queue? 
 			dataPoints = n_.advertise<nodelet_pcl_demo::dataPoint>("/position_and_velocity", 1);	
 
@@ -145,79 +154,79 @@ class ClusterExtractor {
 
 			// Need unique id for each marker in RVIZ
 			markerIDCount = 0;
-			
+
 			// Get the filter dimensions from the server
 			// These are defined in the launchfile
 			// They are defined in terms of the table
-			
+
 			n_.getParam("filter_minX_table_frame", filter_minX_table_frame);
 			n_.getParam("filter_maxX_table_frame", filter_maxX_table_frame);
-		
+
 			n_.getParam("filter_minY_table_frame", filter_minY_table_frame);
-                        n_.getParam("filter_maxY_table_frame", filter_maxY_table_frame);
-			
+			n_.getParam("filter_maxY_table_frame", filter_maxY_table_frame);
+
 			n_.getParam("filter_minZ_table_frame", filter_minZ_table_frame);
-                        n_.getParam("filter_maxZ_table_frame", filter_maxZ_table_frame);
-			
+			n_.getParam("filter_maxZ_table_frame", filter_maxZ_table_frame);
+
 			// Convert the filter dimensions into the base's frame
 			geometry_msgs::PointStamped minCorner = convertPointToRobotFrame(filter_minX_table_frame, filter_minY_table_frame, filter_minZ_table_frame);
 			geometry_msgs::PointStamped maxCorner = convertPointToRobotFrame(filter_maxX_table_frame, filter_maxY_table_frame, filter_maxZ_table_frame);
-			
+
 			// Unpack the transformed point
 			filter_minX_robot_frame = minCorner.point.x;
 			filter_minY_robot_frame = minCorner.point.y;
 			filter_minZ_robot_frame = minCorner.point.z;
-			
+
 			filter_maxX_robot_frame = maxCorner.point.x;
-                        filter_maxY_robot_frame = maxCorner.point.y;
-                        filter_maxZ_robot_frame = maxCorner.point.z;
+			filter_maxY_robot_frame = maxCorner.point.y;
+			filter_maxZ_robot_frame = maxCorner.point.z;
 
 		}
 
-		  /* This method converts a (x, y, z) location from the TABLE'S frame
-                 * into the robot's frame. This is for converting the parameters describing
-                 * the volume over which we will filter, defined in the camera's frame, into
-                 * parameters which define the volume in the camera's frame
-                 * Input: doubles x, y, and z which describe a points location in the robot's frame
-                 * Returns: geometry_msgs PointStamped of the input point in the camera's frame
-                 */
-                geometry_msgs::PointStamped convertPointToRobotFrame(double x, double y, double z) {
+		/* This method converts a (x, y, z) location from the TABLE'S frame
+		 * into the robot's frame. This is for converting the parameters describing
+		 * the volume over which we will filter, defined in the camera's frame, into
+		 * parameters which define the volume in the camera's frame
+		 * Input: doubles x, y, and z which describe a points location in the robot's frame
+		 * Returns: geometry_msgs PointStamped of the input point in the camera's frame
+		 */
+		geometry_msgs::PointStamped convertPointToRobotFrame(double x, double y, double z) {
 
-                        bool tableExists = false;
+			bool tableExists = false;
 
-                        tf::TransformListener listener;
-                        tf::StampedTransform transform;
+			tf::TransformListener listener;
+			tf::StampedTransform transform;
 
-                        do {
-                                try {
-                                        listener.lookupTransform("table", "base", ros::Time(0), transform);
-                                        tableExists = true;
-                                }
-                                catch (tf::TransformException ex){
-                                         tableExists = false;
-                                }
-                        }
+			do {
+				try {
+					listener.lookupTransform("table", "base", ros::Time(0), transform);
+					tableExists = true;
+				}
+				catch (tf::TransformException ex){
+					tableExists = false;
+				}
+			}
 
-                        while ( tableExists == false );
+			while ( tableExists == false );
 
 
-                        geometry_msgs::PointStamped point_in_robot_frame;
-                        geometry_msgs::PointStamped point_in_table_frame;
+			geometry_msgs::PointStamped point_in_robot_frame;
+			geometry_msgs::PointStamped point_in_table_frame;
 
-                        point_in_table_frame.header.frame_id = "table";
-                        point_in_table_frame.header.stamp = ros::Time();
+			point_in_table_frame.header.frame_id = "table";
+			point_in_table_frame.header.stamp = ros::Time();
 
-                        point_in_table_frame.point.x = x;
-                        point_in_table_frame.point.y = y;
-                        point_in_table_frame.point.z = z;
+			point_in_table_frame.point.x = x;
+			point_in_table_frame.point.y = y;
+			point_in_table_frame.point.z = z;
 
-                        point_in_robot_frame.header.frame_id = "base";
-                        point_in_robot_frame.header.stamp = ros::Time();
+			point_in_robot_frame.header.frame_id = "base";
+			point_in_robot_frame.header.stamp = ros::Time();
 
-                        listener.transformPoint("base", point_in_table_frame, point_in_robot_frame);
+			listener.transformPoint("base", point_in_table_frame, point_in_robot_frame);
 
-                        return point_in_robot_frame;
-                }
+			return point_in_robot_frame;
+		}
 
 
 
@@ -229,20 +238,20 @@ class ClusterExtractor {
 		 * Returns: geometry_msgs PointStamped of the input point in the camera's frame
 		 */ 
 		geometry_msgs::PointStamped convertPointToCameraFrame(double x, double y, double z) {
-			
+
 			bool tableExists = false;
 
 			tf::TransformListener listener;
 			tf::StampedTransform transform;
-				
+
 			do {
 				try {   
-                                        listener.lookupTransform("table", "camera_depth_frame", ros::Time(0), transform);
-                                	tableExists = true;
+					listener.lookupTransform("table", "camera_depth_frame", ros::Time(0), transform);
+					tableExists = true;
 				}
-                         	catch (tf::TransformException ex){
-                                         tableExists = false;
-                                }
+				catch (tf::TransformException ex){
+					tableExists = false;
+				}
 			}
 
 			while ( tableExists == false );
@@ -253,7 +262,7 @@ class ClusterExtractor {
 
 			point_in_table_frame.header.frame_id = "table";
 			point_in_table_frame.header.stamp = ros::Time();
-			
+
 			point_in_table_frame.point.x = x; 
 			point_in_table_frame.point.y = y; 
 			point_in_table_frame.point.z = z;
@@ -323,9 +332,9 @@ class ClusterExtractor {
 			// but in the camera's frame
 			geometry_msgs::PointStamped min_point_in_camera_frame;
 			geometry_msgs::PointStamped max_point_in_camera_frame;
-			
+
 			geometry_msgs::PointStamped min_point_in_robot_frame;
-                        geometry_msgs::PointStamped max_point_in_robot_frame;
+			geometry_msgs::PointStamped max_point_in_robot_frame;
 
 			// Set the points dimensions
 			// FIX ME
@@ -348,9 +357,9 @@ class ClusterExtractor {
 
 			// Convert the table frame's point to the robot base's frame
 			min_point_in_robot_frame = convertPointToRobotFrame(min_point_in_table_frame.point.x,
-                                        min_point_in_table_frame.point.y, min_point_in_table_frame.point.z);
-                        max_point_in_robot_frame = convertPointToRobotFrame(max_point_in_table_frame.point.x,
-                                        max_point_in_table_frame.point.y, max_point_in_table_frame.point.z);
+					min_point_in_table_frame.point.y, min_point_in_table_frame.point.z);
+			max_point_in_robot_frame = convertPointToRobotFrame(max_point_in_table_frame.point.x,
+					max_point_in_table_frame.point.y, max_point_in_table_frame.point.z);
 
 
 			// Now update the global variables to avoid recomputing this 
@@ -367,17 +376,17 @@ class ClusterExtractor {
 			// This is for the visualization in RVIZ	
 			// These define the volume's 8 corners in RVIZ
 			// These points are defined in the robot's frame
-				
+
 			publishMarker(min_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z);
 			publishMarker(min_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z);
 			publishMarker(min_point_in_robot_frame.point.x, max_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z);
 			publishMarker(min_point_in_robot_frame.point.x, max_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z);
-			
+
 			publishMarker(max_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z);
 			publishMarker(max_point_in_robot_frame.point.x, max_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z);
 			publishMarker(max_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z);
 			publishMarker(max_point_in_robot_frame.point.x, max_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z);
-			
+
 
 		}
 
@@ -425,7 +434,7 @@ class ClusterExtractor {
 				hasPublishedVolume = true;
 				return;
 			}
-			
+
 
 			using pcl_ptr = pcl::PointCloud<pcl::PointXYZ>::Ptr;
 
@@ -508,7 +517,7 @@ class ClusterExtractor {
 			// This object will hold the location and velocity of the ball
 			nodelet_pcl_demo::dataPoint currentState;
 			currentState.header.stamp = ros::Time::now();
-			
+
 			currentState.position.x = averageX;
 			currentState.position.y = averageY;
 			currentState.position.z = averageZ;	
@@ -529,7 +538,7 @@ class ClusterExtractor {
 			// Convert between the two frames
 			listener.transformPoint("base", point_in_camera_frame, point_in_base_frame);
 
-			
+
 			// position_pub.publish(point_in_base_frame);
 			// ros::spinOnce();
 
@@ -573,9 +582,12 @@ class ClusterExtractor {
 
 				// Remember to timestamp the point
 				t_prior = ros::Time::now();
-			
+
 				// Publish the velocity and positions as a dataPoint
 				dataPoints.publish(currentState);
+
+				pose_pub.publish( computePose(currentState) );
+
 			}
 
 			// Publish the marker of the ball's position to RVIZ
@@ -606,7 +618,100 @@ class ClusterExtractor {
 			vis_pub.publish( marker );
 
 		}
+
+		/* Describe this method here
+		 * Input: 
+		 * Return:
+		 */ 
+		geometry_msgs::Pose computePose(nodelet_pcl_demo::dataPoint data) {
+
+			// This is the time until the ball crosses the robot frame's y-axis
+			double time = calculateTime( double(data.position.y), double(data.velocity.y) );
+
+			// Acceleration due to gravity  
+			double g = 9.8;
+
+			// Compute 
+			double x = computeLocation(time, data.position.x, data.velocity.x, 0.0);
+
+			double z = computeLocation(time, data.position.z, data.velocity.z, g);
+
+			// These are the (x, y, z) locations of the ball in the robot's frame
+
+			// Move the arm to this (x, y, z)       
+			geometry_msgs::Pose target_pose;
+
+			// What to set the orientation to?
+			target_pose.orientation.w = 1.0;
+				
+			// FIX ME!!!!
+			// FIX ME!!!!
+			target_pose.position.x = 0.4;
+			target_pose.position.y = 0.4;
+			target_pose.position.z = 0.4;
+
+			return target_pose;
+		}
+
+
 };
+
+
+/* Describe this method here
+ * Input: 
+ * Returns: 
+ */
+double calculateTime(double y_position, double y_velocity) {
+
+	// delta_y = (velocity_y * t) + (0.5 * acceleration_y * t^2)    
+
+	return ( (-1 * y_position) / (y_velocity) );
+}
+
+/* Describe this method here
+ * Inputs: 
+ * Returns: 
+ */
+double computeLocation(double time, double position, double velocity, double acceleration) {
+
+	double delta_position = (velocity * time) + (0.5 * (acceleration * pow(time, 2) ) );
+
+	return delta_position;
+}
+
+/* Describe this method
+ * Input: 
+ * Return:  
+ */
+void computePose(nodelet_pcl_demo::dataPoint data) {
+
+	// This is the time until the ball crosses the robot frame's y-axis
+	double time = calculateTime( double(data.position.y), double(data.velocity.y) );
+
+	// Acceleration due to gravity  
+	double g = 9.8;
+
+	// Compute 
+	double x = computeLocation(time, data.position.x, data.velocity.x, 0.0);
+
+	double z = computeLocation(time, data.position.z, data.velocity.z, g);
+
+	// These are the (x, y, z) locations of the ball in the robot's frame
+
+	// Move the arm to this (x, y, z)       
+	geometry_msgs::Pose target_pose;
+
+	// What to set the orientation to?
+	target_pose.orientation.w = 1.0;
+
+	target_pose.position.x = x;
+	target_pose.position.y = 0;
+	target_pose.position.z = z;
+
+	// move_group.setPoseTarget(target_pose1);      
+
+	return;
+}
 
 /* Main function where execution begins
 */

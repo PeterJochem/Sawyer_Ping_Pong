@@ -22,6 +22,7 @@
 
       <node name="myMoveArm3" pkg="nodelet_pcl_demo" type="moveArm3" />
 
+    <!-- node pkg="nodelet_pcl_demo" name="myMoveRobot_Node" type="moveArm3" output="screen" / -->	
 
 
 </launch>
