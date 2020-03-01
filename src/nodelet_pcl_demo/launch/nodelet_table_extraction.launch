@@ -3,7 +3,7 @@
   <arg name="vis" default="true" doc="Launch RViZ"/>
   <arg name="source" default="realsense" doc="Describes the camera we are using"/> 
   <arg name="config" default="true"/>
-  <arg name="rviz_config" default="$(find sawyer_moveit_config)/launch/moveit.rviz" />
+  <!-- arg name="rviz_config" default="$(find sawyer_moveit_config)/launch/moveit.rviz" / -->
    
  	
   <!-- Load the yaml file in describing the enviroment --> 
@@ -12,6 +12,7 @@
 	
   <!-- Load the table's urdf into the param server so we can display it in RVIZ !-->
   <param name="table_description" textfile="$(find sawyer_ping_pong)/urdf/box.urdf"/> 
+  <param name="robot_description" textfile="/home/peter/Desktop/WinterProject/catkin_ws/src/sawyer_robot/sawyer_description/urdf/sawyer.urdf"/>
  
   <!-- Define the quaternion from the robot's base to the camera -->
   <arg name="x_camera" default="0.89535" doc="Description"/>
@@ -59,7 +60,7 @@
  <node pkg="nodelet_pcl_demo" name="myMoveRobot_Node" type="moveArm3" output="screen" />
 
   <!-- start rviz if vis arg is true -->
-  <node pkg="rviz" type="rviz" respawn="false" name="rviz" if="$(arg vis)"
+   <node pkg="rviz" type="rviz" respawn="false" name="rviz" if="$(arg vis)"
         args="-d $(find nodelet_pcl_demo)/launch/nodelet_demo.rviz" />
 
 	
@@ -75,14 +76,14 @@
   </include>
 
    <include file="$(find sawyer_moveit_config)/launch/sawyer_moveit.launch">
-    <arg name="load_robot_description" value="true"/>
+    <arg name="load_robot_description" value="true" />
   </include>
 
 
-   <include file="$(find sawyer_moveit_config)/launch/moveit_rviz.launch">
-    <arg name="config" value="$(arg config)" />
-    <arg name="rviz_config" value="$(arg rviz_config)" />
-  </include>
+   <!-- include file="$(find sawyer_moveit_config)/launch/moveit_rviz.launch" -->
+    <!-- arg name="config" value="$(arg config)" / -->
+    <!-- arg name="rviz_config" value="$(arg rviz_config)" / --> 
+  <!-- /include -->
 
  
 

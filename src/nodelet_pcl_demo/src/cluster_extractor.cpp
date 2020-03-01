@@ -580,6 +580,10 @@ class ClusterExtractor {
 				priorY = point_in_base_frame.point.y;
 				priorZ = point_in_base_frame.point.z;
 
+				currentState.position.x = point_in_base_frame.point.x;
+                                currentState.position.y = point_in_base_frame.point.y;
+                                currentState.position.z = point_in_base_frame.point.z;
+
 				// Remember to timestamp the point
 				t_prior = ros::Time::now();
 
@@ -685,7 +689,7 @@ double computeLocation(double time, double position, double velocity, double acc
  */
 void computePose(nodelet_pcl_demo::dataPoint data) {
 
-	// This is the time until the ball crosses the robot frame's y-axis
+	// This is the time until the ball crosses the robot frame's x-axis
 	double time = calculateTime( double(data.position.y), double(data.velocity.y) );
 
 	// Acceleration due to gravity  
