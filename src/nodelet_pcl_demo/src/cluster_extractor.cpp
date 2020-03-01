@@ -54,6 +54,7 @@ class ClusterExtractor {
 		
 		// This will store the most recent points observed from the 
 		// camera 
+		//
 
 		// This will publish a custom message type that 
 		// will contain the ball's velocity and position
