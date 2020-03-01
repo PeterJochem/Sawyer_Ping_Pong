@@ -48,6 +48,12 @@ class ClusterExtractor {
 		ros::Publisher filtered_cloud_pub;
 		ros::Publisher vis_pub;
 		ros::Publisher pose_pub; 
+		
+		// This is for testing		
+		ros::Publisher rate_pub;
+		
+		// This will store the most recent points observed from the 
+		// camera 
 
 		// This will publish a custom message type that 
 		// will contain the ball's velocity and position
@@ -57,7 +63,7 @@ class ClusterExtractor {
 		tf::TransformListener listener;
 
 		bool hasPublishedVolume;
-
+	
 		// These are the prior values we read from the system
 		// We need these in order to later compute the velocity
 		double priorX;
@@ -131,6 +137,8 @@ class ClusterExtractor {
 			vis_pub = n_.advertise<visualization_msgs::Marker>("/visualization_marker", 10);
 			
 			pose_pub = n_.advertise<geometry_msgs::Pose>("/desired_pose", 1);	
+
+			rate_pub = n_.advertise<geometry_msgs::Point>("/proccesed", 100);
 
 			// How big to make the queue? 
 			dataPoints = n_.advertise<nodelet_pcl_demo::dataPoint>("/position_and_velocity", 1);	
@@ -435,6 +443,10 @@ class ClusterExtractor {
 				return;
 			}
 
+			// Publish to let me know that another set of data has been processed
+			geometry_msgs::Point check;
+			rate_pub.publish(check);		
+
 
 			using pcl_ptr = pcl::PointCloud<pcl::PointXYZ>::Ptr;
 
@@ -586,11 +598,14 @@ class ClusterExtractor {
 
 				// Remember to timestamp the point
 				t_prior = ros::Time::now();
+				
+				if ( currentState.position.z < 2 ) {
 
-				// Publish the velocity and positions as a dataPoint
-				dataPoints.publish(currentState);
+					// Publish the velocity and positions as a dataPoint
+					dataPoints.publish(currentState);
 
-				pose_pub.publish( computePose(currentState) );
+					pose_pub.publish( computePose(currentState) );
+				}
 
 			}
 

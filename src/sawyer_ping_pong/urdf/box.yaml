@@ -1,10 +1,10 @@
 
 filter_minX_table_frame: -0.6
-filter_maxX_table_frame: 0.3
-filter_minY_table_frame: 0.5
-filter_maxY_table_frame: -0.7
+filter_maxX_table_frame: 0.75
+filter_minY_table_frame: 0.65
+filter_maxY_table_frame: -1.0
 filter_minZ_table_frame: 0
-filter_maxZ_table_frame: 1.0
+filter_maxZ_table_frame: 1.8
 
 
 
