@@ -37,7 +37,7 @@ void computePose(nodelet_pcl_demo::dataPoint);
 double calculateTime(double, double);
 double computeLocation(double, double, double, double);
 geometry_msgs::Pose fitCurve(void);
-
+void plotPlane(double, double, double);
 
 /* This class will handle point cloud processing
 */
@@ -139,7 +139,7 @@ class ClusterExtractor {
 
 			velocity_pub = n_.advertise<geometry_msgs::Point>("/ball_velocity", 3);
 
-			vis_pub = n_.advertise<visualization_msgs::Marker>("/visualization_marker", 10);
+			vis_pub = n_.advertise<visualization_msgs::Marker>("/visualization_marker", 100);
 			
 			pose_pub = n_.advertise<geometry_msgs::Pose>("/desired_pose", 1);	
 
@@ -296,7 +296,7 @@ class ClusterExtractor {
 		 * marker's position in the robot base frame
 		 * Returns void
 		 */
-		void publishMarker(double x, double y, double z) {
+		void publishMarker(double x, double y, double z, bool isPlane) {
 
 			visualization_msgs::Marker marker;
 			marker.header.frame_id = "base";
@@ -315,15 +315,29 @@ class ClusterExtractor {
 			marker.pose.orientation.y = 0.0;
 			marker.pose.orientation.z = 0.0;
 			marker.pose.orientation.w = 1.0;
-			marker.scale.x = 0.1;
-			marker.scale.y = 0.1;
-			marker.scale.z = 0.1;
-			marker.color.a = 0.5; 
-
+			
 			// These set the color of the marker
-			marker.color.r = 0.0;
-			marker.color.g = 0.0;
-			marker.color.b = 1.0;
+                        if ( isPlane == true ) {
+                                marker.color.r = 1.0;
+                                marker.color.g = 0.0;
+                                marker.color.b = 1.0;
+                        			
+				marker.scale.x = 0.05;
+				marker.scale.y = 0.05;
+				marker.scale.z = 0.05;
+				marker.color.a = 0.5; 
+
+			}
+			else { 
+				marker.color.r = 0.0;
+                                marker.color.g = 0.0;
+                                marker.color.b = 1.0;
+			
+				marker.scale.x = 0.1;
+                                marker.scale.y = 0.1;
+                                marker.scale.z = 0.1;
+                                marker.color.a = 0.5;
+			}
 
 			vis_pub.publish( marker );
 		}
@@ -334,6 +348,9 @@ class ClusterExtractor {
 		 * Returns: void
 		 */
 		void publishVolumeMarkers(void) {
+				
+			// Adding to test the plane plotting
+			plotPlane(0, 0, 1);
 
 			// Define the points that define the volume's min and max dimensions	
 			// We will define the volume in the table's frame - but must 
@@ -390,15 +407,15 @@ class ClusterExtractor {
 			// These define the volume's 8 corners in RVIZ
 			// These points are defined in the robot's frame
 
-			publishMarker(min_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z);
-			publishMarker(min_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z);
-			publishMarker(min_point_in_robot_frame.point.x, max_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z);
-			publishMarker(min_point_in_robot_frame.point.x, max_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z);
+			publishMarker(min_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z, false);
+			publishMarker(min_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z, false);
+			publishMarker(min_point_in_robot_frame.point.x, max_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z, false);
+			publishMarker(min_point_in_robot_frame.point.x, max_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z, false);
 
-			publishMarker(max_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z);
-			publishMarker(max_point_in_robot_frame.point.x, max_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z);
-			publishMarker(max_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z);
-			publishMarker(max_point_in_robot_frame.point.x, max_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z);
+			publishMarker(max_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z, false);
+			publishMarker(max_point_in_robot_frame.point.x, max_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z, false);
+			publishMarker(max_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z, false);
+			publishMarker(max_point_in_robot_frame.point.x, max_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z, false);
 
 
 		}
@@ -440,10 +457,6 @@ class ClusterExtractor {
 		 */ 
 		void cloudcb(const sensor_msgs::PointCloud2ConstPtr &scan) {
 			
-			 using namespace arma;	
-			 mat A = randu<mat>(4,5);
-			
-
 			// This will publish the markers in RVIZ which describe 
 			// the volume over which we care about/filter over 
 			if ( hasPublishedVolume == false ) {	
@@ -568,7 +581,8 @@ class ClusterExtractor {
 			else if ( recentPointsIndex >= 5 ) {
 				
 				// Call function to compute the ball's parabola 
-				
+				fitCurve();		
+
 				// Reset the index	
 				recentPointsIndex = 0;
 			}
@@ -576,6 +590,31 @@ class ClusterExtractor {
 	
 		}
 		
+		
+		/* Describe this method
+		 * Input: 
+		 * Return: 
+		 */ 
+		void plotPlane(double a, double b, double c) {
+				
+			// The equation of a plane is 	
+			// ax + by + c = z;
+			
+			double increment = 0.1;
+			double maxValue = 1.0;
+
+			double z = 0;
+		
+			for (double x = 0; x < maxValue; x = x + increment) {
+				for (double y = 0; y < maxValue; y = y + increment) {
+					
+					z = (a * x) + (b * y) + c;  	
+					
+					publishMarker(x, y, z, true); 
+				}	
+			}
+		}
+
 
 		/* Describe this method 
 		 * Input 
@@ -583,9 +622,31 @@ class ClusterExtractor {
 		 */
 		geometry_msgs::Pose fitCurve(void) {
 			
-			// Fit parabolic curve to the data
+			// Fit a plane to the data
+			using namespace arma;
+                        mat A(4, recentPointsIndex);
+			mat X(3, 1); // what we will solve for
+			mat B(4, 1); // These are the Z coordinates of the observed points
+
+			geometry_msgs::PointStamped nextPoint;
+			for (int i = 0; i < recentPointsIndex; ++i) {
+				
+				nextPoint = recentPoints[recentPointsIndex];
+				A(i, 0) = nextPoint.point.x;
+				A(i, 1) = nextPoint.point.y;
+				A(i, 2) = 1;
+
+				B(i, 0) = nextPoint.point.z;
+			}
+			
+			// Use pinv to get psuedo inverse?	
+			X = inv( A.t() * A ) *  A.t() * B;
 			
 
+			// plotPlane( X(0,0), X(1, 0), X(2, 0) );	
+			
+			// plotPlane(0, 0, 1);
+			
 			// Figure out where the ball crosses robot's y = 0
 			
 
