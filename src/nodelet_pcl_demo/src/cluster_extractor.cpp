@@ -27,6 +27,7 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 #include <unistd.h>
+#include <armadillo>
 
 
 typedef pcl::PointCloud<pcl::PointXYZ> PCLCloud;
@@ -35,6 +36,8 @@ typedef pcl::PointCloud<pcl::PointXYZ> PCLCloud;
 void computePose(nodelet_pcl_demo::dataPoint);
 double calculateTime(double, double);
 double computeLocation(double, double, double, double);
+geometry_msgs::Pose fitCurve(void);
+
 
 /* This class will handle point cloud processing
 */
@@ -54,7 +57,8 @@ class ClusterExtractor {
 		
 		// This will store the most recent points observed from the 
 		// camera 
-		//
+		int recentPointsIndex = 0;
+		geometry_msgs::PointStamped recentPoints[100];
 
 		// This will publish a custom message type that 
 		// will contain the ball's velocity and position
@@ -434,7 +438,11 @@ class ClusterExtractor {
 		 * frame. This data is published on the topic /ball_velocity 
 		 * Input: scan is the point cloud from the camera's frame 
 		 */ 
-		void cloudcb(const sensor_msgs::PointCloud2ConstPtr &scan)    {
+		void cloudcb(const sensor_msgs::PointCloud2ConstPtr &scan) {
+			
+			 using namespace arma;	
+			 mat A = randu<mat>(4,5);
+			
 
 			// This will publish the markers in RVIZ which describe 
 			// the volume over which we care about/filter over 
@@ -550,94 +558,47 @@ class ClusterExtractor {
 
 			// Convert between the two frames
 			listener.transformPoint("base", point_in_camera_frame, point_in_base_frame);
-
-
-			// position_pub.publish(point_in_base_frame);
-			// ros::spinOnce();
-
-			// Compute the new velocity
-			geometry_msgs::Point myVelocity;
-			if ( ( (priorX == 0.0) && (priorY == 0.0) && (priorZ == 0.0) ) ) {
-				// Don't publish velocity, simply record the velocity
-				// Set the prior states values if the prior states values 
-				// are still all zero (on start and if we get a frame that 
-				// does not have a valid point cloud in it)
-				priorX = point_in_base_frame.point.x;
-				priorY = point_in_base_frame.point.y;
-				priorZ = point_in_base_frame.point.z;
-
-				// Remember to time stamp the point
-				t_prior = ros::Time::now();
+			
+			// Check that the computed point is not the 0 point in the CAMERA's frame
+			if ( (length > 0) && (recentPointsIndex < 5) ) {
+				// The length > 0 means the point cloud has more than 0 points in it
+				recentPoints[recentPointsIndex] = point_in_base_frame;	
+				recentPointsIndex++;
 			}
-			else if( isnan(averageX) == false) {
-				// This checks if the point cloud center is valid
-				// Compute the velocity and publish it
-
-				// .toSec() converts the time object to a floating point number	
-				// This makes computing dt much easier
-				float t_now = ros::Time::now().toSec();
-
-				// Compute dt
-				float dt = t_now - t_prior.toSec(); 
-
-				// Compute the velocities
-				currentState.velocity.x = (float(averageX - priorX) ) / (dt);
-				currentState.velocity.y = (float(averageY - priorY) ) / (dt);
-				currentState.velocity.z = (float(averageZ - priorZ) ) / (dt);
-
-				// velocity_pub.publish(myVelocity);		
-				// ros::spinOnce();
-
-				// Update the prior's fields
-				priorX = point_in_base_frame.point.x;
-				priorY = point_in_base_frame.point.y;
-				priorZ = point_in_base_frame.point.z;
-
-				currentState.position.x = point_in_base_frame.point.x;
-                                currentState.position.y = point_in_base_frame.point.y;
-                                currentState.position.z = point_in_base_frame.point.z;
-
-				// Remember to timestamp the point
-				t_prior = ros::Time::now();
+			else if ( recentPointsIndex >= 5 ) {
 				
-				if ( currentState.position.z < 2 ) {
-
-					// Publish the velocity and positions as a dataPoint
-					dataPoints.publish(currentState);
-
-					pose_pub.publish( computePose(currentState) );
-				}
-
+				// Call function to compute the ball's parabola 
+				
+				// Reset the index	
+				recentPointsIndex = 0;
 			}
-
-			// Publish the marker of the ball's position to RVIZ
-			visualization_msgs::Marker marker;
-			marker.header.frame_id = "base";
-			marker.header.stamp = ros::Time();
-			marker.ns = "my_namespace";
-
-			marker.id = markerIDCount;
-			markerIDCount = markerIDCount + 1;
-
-			marker.type = visualization_msgs::Marker::SPHERE;
-			marker.action = visualization_msgs::Marker::ADD;
-			marker.pose.position.x = point_in_base_frame.point.x;
-			marker.pose.position.y = point_in_base_frame.point.y;
-			marker.pose.position.z = point_in_base_frame.point.z;
-			marker.pose.orientation.x = 0.0;
-			marker.pose.orientation.y = 0.0;
-			marker.pose.orientation.z = 0.0;
-			marker.pose.orientation.w = 1.0;
-			marker.scale.x = 0.1;
-			marker.scale.y = 0.1;
-			marker.scale.z = 0.1;
-			marker.color.a = 0.5;
-			marker.color.r = 0.0;
-			marker.color.g = 1.0;
-			marker.color.b = 0.0;
-			vis_pub.publish( marker );
-
+			
+	
 		}
+		
+
+		/* Describe this method 
+		 * Input 
+		 * Returns 
+		 */
+		geometry_msgs::Pose fitCurve(void) {
+			
+			// Fit parabolic curve to the data
+			
+
+			// Figure out where the ball crosses robot's y = 0
+			
+
+			// Return the pose
+			geometry_msgs::Pose m;
+			m.position.x = 1;
+			m.position.y = 1;
+			m.position.z = 1;
+
+			return m;
+		}
+
+
 
 		/* Describe this method here
 		 * Input: 
