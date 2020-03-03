@@ -350,7 +350,7 @@ class ClusterExtractor {
 		void publishVolumeMarkers(void) {
 				
 			// Adding to test the plane plotting
-			plotPlane(0, 0, 1);
+			// plotPlane(0, 0, 1);
 
 			// Define the points that define the volume's min and max dimensions	
 			// We will define the volume in the table's frame - but must 
@@ -467,6 +467,7 @@ class ClusterExtractor {
 
 			// Publish to let me know that another set of data has been processed
 			geometry_msgs::Point check;
+			check.x = recentPointsIndex;
 			rate_pub.publish(check);		
 
 
@@ -573,16 +574,32 @@ class ClusterExtractor {
 			listener.transformPoint("base", point_in_camera_frame, point_in_base_frame);
 			
 			// Check that the computed point is not the 0 point in the CAMERA's frame
-			if ( (length > 0) && (recentPointsIndex < 5) ) {
+			if ( (length > 1) && (recentPointsIndex < 5)  ) {
 				// The length > 0 means the point cloud has more than 0 points in it
-				recentPoints[recentPointsIndex] = point_in_base_frame;	
-				recentPointsIndex++;
-			}
-			else if ( recentPointsIndex >= 5 ) {
-				
-				// Call function to compute the ball's parabola 
-				fitCurve();		
+				recentPoints[recentPointsIndex].point.x = point_in_base_frame.point.x;
+				recentPoints[recentPointsIndex].point.y = point_in_base_frame.point.y;
+				recentPoints[recentPointsIndex].point.z = point_in_base_frame.point.z;
+	
 
+				recentPointsIndex++;
+				
+				// Publish to let us know a point was observed
+		
+		
+			}
+			else if ( (length > 0) && (recentPointsIndex >= 5) ) {
+				
+				bool exceptionOccured = false;		
+
+				// Call function to compute the ball's parabola 
+				try {
+					fitCurve();		
+				}
+				catch( ... ) {
+					exceptionOccured = true;
+				}
+		
+				// if ( exceptionOccured != true) {
 				// Reset the index	
 				recentPointsIndex = 0;
 			}
@@ -624,9 +641,9 @@ class ClusterExtractor {
 			
 			// Fit a plane to the data
 			using namespace arma;
-                        mat A(4, recentPointsIndex);
+                        mat A(recentPointsIndex, 3);
 			mat X(3, 1); // what we will solve for
-			mat B(4, 1); // These are the Z coordinates of the observed points
+			mat B(recentPointsIndex, 1); // These are the Z coordinates of the observed points
 
 			geometry_msgs::PointStamped nextPoint;
 			for (int i = 0; i < recentPointsIndex; ++i) {
@@ -634,16 +651,18 @@ class ClusterExtractor {
 				nextPoint = recentPoints[recentPointsIndex];
 				A(i, 0) = nextPoint.point.x;
 				A(i, 1) = nextPoint.point.y;
-				A(i, 2) = 1;
+				A(i, 2) = nextPoint.point.z;
 
-				B(i, 0) = nextPoint.point.z;
+				B(i, 0) = 1;
 			}
 			
+			A.print();
+				
 			// Use pinv to get psuedo inverse?	
 			X = inv( A.t() * A ) *  A.t() * B;
 			
 
-			// plotPlane( X(0,0), X(1, 0), X(2, 0) );	
+			plotPlane( X(0,0), X(1, 0), X(2, 0) );	
 			
 			// plotPlane(0, 0, 1);
 			
