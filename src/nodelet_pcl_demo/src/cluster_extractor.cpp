@@ -37,7 +37,7 @@ void computePose(nodelet_pcl_demo::dataPoint);
 double calculateTime(double, double);
 double computeLocation(double, double, double, double);
 geometry_msgs::Pose fitCurve(void);
-void plotPlane(double, double, double);
+void plotPlane(double, double, double, double, double, double);
 
 /* This class will handle point cloud processing
 */
@@ -68,7 +68,9 @@ class ClusterExtractor {
 		tf::TransformListener listener;
 
 		bool hasPublishedVolume;
-	
+		
+		int planeIDStart = 100000;		
+
 		// These are the prior values we read from the system
 		// We need these in order to later compute the velocity
 		double priorX;
@@ -540,9 +542,9 @@ class ClusterExtractor {
 			else {
 				// If the cloud does not have any points in it, then
 				// publish the center to be (0.0, 0.0, 0.0)
-				averageX = 0.0;
-				averageY = 0.0;
-				averageZ = 0.0;
+				averageX = 0;
+				averageY = 0;
+				averageZ = 0;
 			}
 
 			// This lets the system know we are going to publish a geometry_msg::Point on the topic Ball_Location
@@ -573,8 +575,11 @@ class ClusterExtractor {
 			// Convert between the two frames
 			listener.transformPoint("base", point_in_camera_frame, point_in_base_frame);
 			
+			int numPoints = 10;
+
+
 			// Check that the computed point is not the 0 point in the CAMERA's frame
-			if ( (length > 1) && (recentPointsIndex < 5)  ) {
+			if ( (length > 1) && (recentPointsIndex < numPoints) && (averageX != 0) && (averageY != 0) && (averageZ != 0)  ) {
 				// The length > 0 means the point cloud has more than 0 points in it
 				recentPoints[recentPointsIndex].point.x = point_in_base_frame.point.x;
 				recentPoints[recentPointsIndex].point.y = point_in_base_frame.point.y;
@@ -587,7 +592,7 @@ class ClusterExtractor {
 		
 		
 			}
-			else if ( (length > 0) && (recentPointsIndex >= 5) ) {
+			else if ( (length > 0) && (recentPointsIndex >= numPoints) ) {
 				
 				bool exceptionOccured = false;		
 
@@ -604,6 +609,90 @@ class ClusterExtractor {
 				recentPointsIndex = 0;
 			}
 			
+			// Compute the new velocity
+			geometry_msgs::Point myVelocity;
+			if ( ( (priorX == 0.0) && (priorY == 0.0) && (priorZ == 0.0) ) ) {
+				// Don't publish velocity, simply record the velocity
+				// Set the prior states values if the prior states values 
+				// are still all zero (on start and if we get a frame that 
+				// does not have a valid point cloud in it)
+				priorX = point_in_base_frame.point.x;
+				priorY = point_in_base_frame.point.y;
+				priorZ = point_in_base_frame.point.z;
+
+				// Remember to time stamp the point
+				t_prior = ros::Time::now();
+			}
+			else if( isnan(averageX) == false) {
+				// This checks if the point cloud center is valid
+				// Compute the velocity and publish it
+
+				// .toSec() converts the time object to a floating point number	
+				// This makes computing dt much easier
+				float t_now = ros::Time::now().toSec();
+
+				// Compute dt
+				float dt = t_now - t_prior.toSec(); 
+
+				// Compute the velocities
+				currentState.velocity.x = (float(averageX - priorX) ) / (dt);
+				currentState.velocity.y = (float(averageY - priorY) ) / (dt);
+				currentState.velocity.z = (float(averageZ - priorZ) ) / (dt);
+
+				// velocity_pub.publish(myVelocity);		
+				// ros::spinOnce();
+
+				// Update the prior's fields
+				priorX = point_in_base_frame.point.x;
+				priorY = point_in_base_frame.point.y;
+				priorZ = point_in_base_frame.point.z;
+
+				currentState.position.x = point_in_base_frame.point.x;
+                                currentState.position.y = point_in_base_frame.point.y;
+                                currentState.position.z = point_in_base_frame.point.z;
+
+				// Remember to timestamp the point
+				t_prior = ros::Time::now();
+				
+				if ( currentState.position.z < 2 ) {
+
+					// Publish the velocity and positions as a dataPoint
+					dataPoints.publish(currentState);
+
+					pose_pub.publish( computePose(currentState) );
+				}
+
+			}
+
+			// Publish the marker of the ball's position to RVIZ
+			visualization_msgs::Marker marker;
+			marker.header.frame_id = "base";
+			marker.header.stamp = ros::Time();
+			marker.ns = "my_namespace";
+
+			marker.id = markerIDCount;
+			markerIDCount = markerIDCount + 1;
+
+			marker.type = visualization_msgs::Marker::SPHERE;
+			marker.action = visualization_msgs::Marker::ADD;
+			marker.pose.position.x = point_in_base_frame.point.x;
+			marker.pose.position.y = point_in_base_frame.point.y;
+			marker.pose.position.z = point_in_base_frame.point.z;
+			marker.pose.orientation.x = 0.0;
+			marker.pose.orientation.y = 0.0;
+			marker.pose.orientation.z = 0.0;
+			marker.pose.orientation.w = 1.0;
+			marker.scale.x = 0.1;
+			marker.scale.y = 0.1;
+			marker.scale.z = 0.1;
+			marker.color.a = 0.5;
+			marker.color.r = 1.0;
+			marker.color.g = 1.0;
+			marker.color.b = 1.0;
+			
+			marker.lifetime = ros::Duration(1.0);
+
+			vis_pub.publish( marker );			
 	
 		}
 		
@@ -612,24 +701,63 @@ class ClusterExtractor {
 		 * Input: 
 		 * Return: 
 		 */ 
-		void plotPlane(double a, double b, double c) {
+		void plotPlane(double a, double b, double c, double x_On_Plane, double y_On_Plane, double z_On_Plane) {
 				
 			// The equation of a plane is 	
 			// ax + by + c = z;
 			
-			double increment = 0.1;
-			double maxValue = 1.0;
-
+			double increment = 0.01;
+			double maxValue = 0.75;
+			
 			double z = 0;
-		
-			for (double x = 0; x < maxValue; x = x + increment) {
-				for (double y = 0; y < maxValue; y = y + increment) {
+
+			int count = 0;
+				
+			for (double x = x_On_Plane - maxValue; x < maxValue; x = x + increment) {
+				for (double y = y_On_Plane - maxValue; y < maxValue; y = y + increment) {
 					
-					z = (a * x) + (b * y) + c;  	
+					// This depends on how you define the plane
+					// IMPORTANT!!
+					z = (1 - (a * x) - (b * y) ) / ( c );  	
 					
-					publishMarker(x, y, z, true); 
+					// publishMarker(x, y, z, true);
+					visualization_msgs::Marker marker;
+		                        marker.header.frame_id = "base";
+                		        marker.header.stamp = ros::Time();
+                        		marker.ns = "my_namespace";
+
+                        		marker.id = planeIDStart + count;
+                        		planeIDStart = planeIDStart + 1;
+					// count = count + 1;
+
+                        		marker.type = visualization_msgs::Marker::SPHERE;
+                        		marker.action = visualization_msgs::Marker::ADD;
+                        		
+					marker.pose.position.x = x;
+                        		marker.pose.position.y = y;
+                        		marker.pose.position.z = z;
+                        		
+					marker.pose.orientation.x = 0.0;
+                        		marker.pose.orientation.y = 0.0;
+                        		marker.pose.orientation.z = 0.0;
+                        		marker.pose.orientation.w = 1.0;
+
+                        		// These set the color of the marker
+                               		marker.color.r = 0.0;
+                               		marker.color.g = 1.0;
+                                	marker.color.b = 0.0;
+
+                                	marker.scale.x = 0.05;
+                                	marker.scale.y = 0.05;
+                                	marker.scale.z = 0.05;
+                               		marker.color.a = 0.5;
+					
+					marker.lifetime = ros::Duration(0.5);
+
+                        		vis_pub.publish( marker );
 				}	
 			}
+
 		}
 
 
@@ -648,7 +776,7 @@ class ClusterExtractor {
 			geometry_msgs::PointStamped nextPoint;
 			for (int i = 0; i < recentPointsIndex; ++i) {
 				
-				nextPoint = recentPoints[recentPointsIndex];
+				nextPoint = recentPoints[i];
 				A(i, 0) = nextPoint.point.x;
 				A(i, 1) = nextPoint.point.y;
 				A(i, 2) = nextPoint.point.z;
@@ -661,9 +789,14 @@ class ClusterExtractor {
 			// Use pinv to get psuedo inverse?	
 			X = inv( A.t() * A ) *  A.t() * B;
 			
+			// Include a point on the plane
+			double x = A(3, 0); 
+			double y = A(3, 1);
+			double z = A(3, 2);
 
-			plotPlane( X(0,0), X(1, 0), X(2, 0) );	
-			
+			//if (  rand() > 0.98 ) {
+				plotPlane( X(0, 0), X(1, 0), X(2, 0), x, y, z );	
+			//}
 			// plotPlane(0, 0, 1);
 			
 			// Figure out where the ball crosses robot's y = 0
