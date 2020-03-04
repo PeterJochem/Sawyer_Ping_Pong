@@ -5,6 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /MarkerArray1
       Splitter Ratio: 0.4497816562652588
     Tree Height: 728
   - Class: rviz/Selection
@@ -475,6 +476,14 @@ Visualization Manager:
       Enabled: true
       Marker Topic: /visualization_marker
       Name: Marker
+      Namespaces:
+        my_namespace: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: plane
+      Name: MarkerArray
       Namespaces:
         my_namespace: true
       Queue Size: 100

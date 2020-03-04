@@ -28,7 +28,7 @@
 #include <tf/transform_listener.h>
 #include <unistd.h>
 #include <armadillo>
-
+#include <visualization_msgs/MarkerArray.h>
 
 typedef pcl::PointCloud<pcl::PointXYZ> PCLCloud;
 
@@ -52,6 +52,8 @@ class ClusterExtractor {
 		ros::Publisher vis_pub;
 		ros::Publisher pose_pub; 
 		
+		ros::Publisher plane_pub;
+
 		// This is for testing		
 		ros::Publisher rate_pub;
 		
@@ -141,8 +143,10 @@ class ClusterExtractor {
 
 			velocity_pub = n_.advertise<geometry_msgs::Point>("/ball_velocity", 3);
 
-			vis_pub = n_.advertise<visualization_msgs::Marker>("/visualization_marker", 100);
+			vis_pub = n_.advertise<visualization_msgs::Marker>("/visualization_marker", 300);
 			
+			plane_pub = n_.advertise<visualization_msgs::MarkerArray>("/plane", 100); 	
+
 			pose_pub = n_.advertise<geometry_msgs::Pose>("/desired_pose", 1);	
 
 			rate_pub = n_.advertise<geometry_msgs::Point>("/proccesed", 100);
@@ -706,13 +710,16 @@ class ClusterExtractor {
 			// The equation of a plane is 	
 			// ax + by + c = z;
 			
-			double increment = 0.01;
+			double increment = 0.05;
 			double maxValue = 0.75;
 			
 			double z = 0;
 
 			int count = 0;
+			
+			visualization_msgs::MarkerArray markerarray;	
 				
+
 			for (double x = x_On_Plane - maxValue; x < maxValue; x = x + increment) {
 				for (double y = y_On_Plane - maxValue; y < maxValue; y = y + increment) {
 					
@@ -720,43 +727,49 @@ class ClusterExtractor {
 					// IMPORTANT!!
 					z = (1 - (a * x) - (b * y) ) / ( c );  	
 					
+					// myMarker.action = visualization_msgs::myMarker::ADD;
+
 					// publishMarker(x, y, z, true);
-					visualization_msgs::Marker marker;
-		                        marker.header.frame_id = "base";
-                		        marker.header.stamp = ros::Time();
-                        		marker.ns = "my_namespace";
+					visualization_msgs::Marker myMarker;
+		                        myMarker.header.frame_id = "base";
+                		        myMarker.header.stamp = ros::Time();
+                        		myMarker.ns = "my_namespace";
 
-                        		marker.id = planeIDStart + count;
+                        		myMarker.id = planeIDStart + count;
                         		planeIDStart = planeIDStart + 1;
-					// count = count + 1;
+					count = count + 1;
 
-                        		marker.type = visualization_msgs::Marker::SPHERE;
-                        		marker.action = visualization_msgs::Marker::ADD;
+                        		myMarker.type = visualization_msgs::Marker::SPHERE;
+                        		myMarker.action = visualization_msgs::Marker::ADD;
                         		
-					marker.pose.position.x = x;
-                        		marker.pose.position.y = y;
-                        		marker.pose.position.z = z;
+					myMarker.pose.position.x = x;
+                        		myMarker.pose.position.y = y;
+                        		myMarker.pose.position.z = z;
                         		
-					marker.pose.orientation.x = 0.0;
-                        		marker.pose.orientation.y = 0.0;
-                        		marker.pose.orientation.z = 0.0;
-                        		marker.pose.orientation.w = 1.0;
+					myMarker.pose.orientation.x = 0.0;
+                        		myMarker.pose.orientation.y = 0.0;
+                        		myMarker.pose.orientation.z = 0.0;
+                        		myMarker.pose.orientation.w = 1.0;
 
                         		// These set the color of the marker
-                               		marker.color.r = 0.0;
-                               		marker.color.g = 1.0;
-                                	marker.color.b = 0.0;
+                               		myMarker.color.r = 0.0;
+                               		myMarker.color.g = 1.0;
+                                	myMarker.color.b = 0.0;
 
-                                	marker.scale.x = 0.05;
-                                	marker.scale.y = 0.05;
-                                	marker.scale.z = 0.05;
-                               		marker.color.a = 0.5;
+                                	myMarker.scale.x = 0.05;
+                                	myMarker.scale.y = 0.05;
+                                	myMarker.scale.z = 0.05;
+                               		myMarker.color.a = 0.5;
 					
-					marker.lifetime = ros::Duration(0.5);
-
-                        		vis_pub.publish( marker );
+					myMarker.lifetime = ros::Duration(1.0);
+					
+					markerarray.markers.push_back(myMarker);	
+                        		// vis_pub.publish( marker );
+		
 				}	
 			}
+
+			plane_pub.publish(markerarray);
 
 		}
 
