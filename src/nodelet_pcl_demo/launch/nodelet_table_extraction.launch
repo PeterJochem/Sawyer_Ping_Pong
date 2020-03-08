@@ -50,7 +50,7 @@
   </include>
 
   <!-- launch the nodelet manager -->
-  <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen"/>  
+  <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" />  
 
   
   <node pkg="nodelet_pcl_demo" name="cluster_extraction" type="cluster_extractor" output="screen" />

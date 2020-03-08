@@ -38,6 +38,8 @@ double calculateTime(double, double);
 double computeLocation(double, double, double, double);
 geometry_msgs::Pose fitCurve(void);
 void plotPlane(double, double, double, double, double, double);
+double predictParabola(double, double, double, double);
+double findInitial_Y_Value(geometry_msgs::Point, arma::mat);
 
 /* This class will handle point cloud processing
 */
@@ -51,12 +53,14 @@ class ClusterExtractor {
 		ros::Publisher filtered_cloud_pub;
 		ros::Publisher vis_pub;
 		ros::Publisher pose_pub; 
-		
+
 		ros::Publisher plane_pub;
+		
+		ros::Publisher trajectory_pub;
 
 		// This is for testing		
 		ros::Publisher rate_pub;
-		
+
 		// This will store the most recent points observed from the 
 		// camera 
 		int recentPointsIndex = 0;
@@ -70,8 +74,9 @@ class ClusterExtractor {
 		tf::TransformListener listener;
 
 		bool hasPublishedVolume;
-		
+
 		int planeIDStart = 100000;		
+		int trajectoryStart = planeIDStart * 5;
 
 		// These are the prior values we read from the system
 		// We need these in order to later compute the velocity
@@ -144,12 +149,14 @@ class ClusterExtractor {
 			velocity_pub = n_.advertise<geometry_msgs::Point>("/ball_velocity", 3);
 
 			vis_pub = n_.advertise<visualization_msgs::Marker>("/visualization_marker", 300);
-			
-			plane_pub = n_.advertise<visualization_msgs::MarkerArray>("/plane", 100); 	
+
+			plane_pub = n_.advertise<visualization_msgs::MarkerArray>("/plane", 5); 	
 
 			pose_pub = n_.advertise<geometry_msgs::Pose>("/desired_pose", 1);	
 
 			rate_pub = n_.advertise<geometry_msgs::Point>("/proccesed", 100);
+			
+			trajectory_pub = n_.advertise<visualization_msgs::MarkerArray>("/trajectory", 4);
 
 			// How big to make the queue? 
 			dataPoints = n_.advertise<nodelet_pcl_demo::dataPoint>("/position_and_velocity", 1);	
@@ -321,13 +328,13 @@ class ClusterExtractor {
 			marker.pose.orientation.y = 0.0;
 			marker.pose.orientation.z = 0.0;
 			marker.pose.orientation.w = 1.0;
-			
+
 			// These set the color of the marker
-                        if ( isPlane == true ) {
-                                marker.color.r = 1.0;
-                                marker.color.g = 0.0;
-                                marker.color.b = 1.0;
-                        			
+			if ( isPlane == true ) {
+				marker.color.r = 1.0;
+				marker.color.g = 0.0;
+				marker.color.b = 1.0;
+
 				marker.scale.x = 0.05;
 				marker.scale.y = 0.05;
 				marker.scale.z = 0.05;
@@ -336,13 +343,13 @@ class ClusterExtractor {
 			}
 			else { 
 				marker.color.r = 0.0;
-                                marker.color.g = 0.0;
-                                marker.color.b = 1.0;
-			
+				marker.color.g = 0.0;
+				marker.color.b = 1.0;
+
 				marker.scale.x = 0.1;
-                                marker.scale.y = 0.1;
-                                marker.scale.z = 0.1;
-                                marker.color.a = 0.5;
+				marker.scale.y = 0.1;
+				marker.scale.z = 0.1;
+				marker.color.a = 0.5;
 			}
 
 			vis_pub.publish( marker );
@@ -354,9 +361,8 @@ class ClusterExtractor {
 		 * Returns: void
 		 */
 		void publishVolumeMarkers(void) {
-				
+
 			// Adding to test the plane plotting
-			// plotPlane(0, 0, 1);
 
 			// Define the points that define the volume's min and max dimensions	
 			// We will define the volume in the table's frame - but must 
@@ -462,7 +468,7 @@ class ClusterExtractor {
 		 * Input: scan is the point cloud from the camera's frame 
 		 */ 
 		void cloudcb(const sensor_msgs::PointCloud2ConstPtr &scan) {
-			
+
 			// This will publish the markers in RVIZ which describe 
 			// the volume over which we care about/filter over 
 			if ( hasPublishedVolume == false ) {	
@@ -578,8 +584,8 @@ class ClusterExtractor {
 
 			// Convert between the two frames
 			listener.transformPoint("base", point_in_camera_frame, point_in_base_frame);
-			
-			int numPoints = 10;
+
+			int numPoints = 5;
 
 
 			// Check that the computed point is not the 0 point in the CAMERA's frame
@@ -588,16 +594,16 @@ class ClusterExtractor {
 				recentPoints[recentPointsIndex].point.x = point_in_base_frame.point.x;
 				recentPoints[recentPointsIndex].point.y = point_in_base_frame.point.y;
 				recentPoints[recentPointsIndex].point.z = point_in_base_frame.point.z;
-	
+
 
 				recentPointsIndex++;
-				
+
 				// Publish to let us know a point was observed
-		
-		
+
+
 			}
 			else if ( (length > 0) && (recentPointsIndex >= numPoints) ) {
-				
+
 				bool exceptionOccured = false;		
 
 				// Call function to compute the ball's parabola 
@@ -607,12 +613,12 @@ class ClusterExtractor {
 				catch( ... ) {
 					exceptionOccured = true;
 				}
-		
+
 				// if ( exceptionOccured != true) {
 				// Reset the index	
 				recentPointsIndex = 0;
 			}
-			
+
 			// Compute the new velocity
 			geometry_msgs::Point myVelocity;
 			if ( ( (priorX == 0.0) && (priorY == 0.0) && (priorZ == 0.0) ) ) {
@@ -652,12 +658,12 @@ class ClusterExtractor {
 				priorZ = point_in_base_frame.point.z;
 
 				currentState.position.x = point_in_base_frame.point.x;
-                                currentState.position.y = point_in_base_frame.point.y;
-                                currentState.position.z = point_in_base_frame.point.z;
+				currentState.position.y = point_in_base_frame.point.y;
+				currentState.position.z = point_in_base_frame.point.z;
 
 				// Remember to timestamp the point
 				t_prior = ros::Time::now();
-				
+
 				if ( currentState.position.z < 2 ) {
 
 					// Publish the velocity and positions as a dataPoint
@@ -693,146 +699,429 @@ class ClusterExtractor {
 			marker.color.r = 1.0;
 			marker.color.g = 1.0;
 			marker.color.b = 1.0;
-			
-			marker.lifetime = ros::Duration(1.0);
+
+			marker.lifetime = ros::Duration(3.0);
 
 			vis_pub.publish( marker );			
-	
-		}
-		
-		
-		/* Describe this method
-		 * Input: 
-		 * Return: 
-		 */ 
-		void plotPlane(double a, double b, double c, double x_On_Plane, double y_On_Plane, double z_On_Plane) {
+
+			}
+
+
+			/* Describe this method here
+			*/ 
+			double predictParabola(double a, double b, double c, double input) {
+
+				// z = (a)y^2 + (b)y + c
+				return (a * pow(input, 2) ) + (b * input) + c; 
+			}
+
+			/* Describe this method here
+			*/
+			double findInitial_Y_Value( geometry_msgs::Point observedPoint_Plane, arma::mat R_robot_p ) {
+
+				arma::mat predicted_point_plane_frame(4, 1);
+				predicted_point_plane_frame(0, 0) = observedPoint_Plane.x;
+				predicted_point_plane_frame(1, 0) = observedPoint_Plane.y;
+				predicted_point_plane_frame(2, 0) = observedPoint_Plane.z;
+				predicted_point_plane_frame(3, 0) = 1.0;
+
+				arma::mat predicted_point_robot_frame = R_robot_p * predicted_point_plane_frame;
+
+				// Return the y-value
+				return predicted_point_robot_frame(1, 0);
+			}
+
+
+			/* Describe this method here
+			*/
+			void plotTrajectory(double a, double b, double c, arma::mat observedPoint_Plane, arma::mat R_robot_p) {
+
+				// The parameters a, b, c describe the parabola   
+				// z = (a)y^2 + (b)y + c
+
+				// Compute the initial x	
 				
-			// The equation of a plane is 	
-			// ax + by + c = z;
-			
-			double increment = 0.05;
-			double maxValue = 0.75;
-			
-			double z = 0;
+				double plane_x = observedPoint_Plane(0, 0);	
+				double initial_y = observedPoint_Plane(1, 0);
 
-			int count = 0;
-			
-			visualization_msgs::MarkerArray markerarray;	
-				
+				visualization_msgs::MarkerArray markerarray;
 
-			for (double x = x_On_Plane - maxValue; x < maxValue; x = x + increment) {
-				for (double y = y_On_Plane - maxValue; y < maxValue; y = y + increment) {
-					
-					// This depends on how you define the plane
-					// IMPORTANT!!
-					z = (1 - (a * x) - (b * y) ) / ( c );  	
-					
-					// myMarker.action = visualization_msgs::myMarker::ADD;
+				for (int i = 0; i < 3; i = i + 0.1) {
 
-					// publishMarker(x, y, z, true);
+					double newY = i + initial_y;
+					double newZ = predictParabola(a, b, c, newY);
+
+					// Convert point into the robot's frame 
+					arma::mat predicted_point_plane_frame(4, 1);
+					predicted_point_plane_frame(0, 0) = plane_x;
+					predicted_point_plane_frame(1, 0) = newY;
+					predicted_point_plane_frame(2, 0) = newZ;
+					predicted_point_plane_frame(3, 0) = 1.0;
+
+					// Convert between the two frames
+					arma::mat predicted_point_robot_frame = R_robot_p * predicted_point_plane_frame;
+
+					visualization_msgs::MarkerArray markerarray;
+
 					visualization_msgs::Marker myMarker;
-		                        myMarker.header.frame_id = "base";
-                		        myMarker.header.stamp = ros::Time();
-                        		myMarker.ns = "my_namespace";
+					myMarker.header.frame_id = "base";
+					myMarker.header.stamp = ros::Time();
+					myMarker.ns = "my_namespace";
 
-                        		myMarker.id = planeIDStart + count;
-                        		planeIDStart = planeIDStart + 1;
-					count = count + 1;
+					myMarker.id = trajectoryStart;
+					trajectoryStart = trajectoryStart + 1;
 
-                        		myMarker.type = visualization_msgs::Marker::SPHERE;
-                        		myMarker.action = visualization_msgs::Marker::ADD;
-                        		
-					myMarker.pose.position.x = x;
-                        		myMarker.pose.position.y = y;
-                        		myMarker.pose.position.z = z;
-                        		
+					myMarker.type = visualization_msgs::Marker::SPHERE;
+					myMarker.action = visualization_msgs::Marker::ADD;
+
+					myMarker.pose.position.x = predicted_point_robot_frame(0, 0);
+					myMarker.pose.position.y = predicted_point_robot_frame(1, 0);
+					myMarker.pose.position.z = predicted_point_robot_frame(2, 0);
+
 					myMarker.pose.orientation.x = 0.0;
-                        		myMarker.pose.orientation.y = 0.0;
-                        		myMarker.pose.orientation.z = 0.0;
-                        		myMarker.pose.orientation.w = 1.0;
+					myMarker.pose.orientation.y = 0.0;
+					myMarker.pose.orientation.z = 0.0;
+					myMarker.pose.orientation.w = 1.0;
 
-                        		// These set the color of the marker
-                               		myMarker.color.r = 0.0;
-                               		myMarker.color.g = 1.0;
-                                	myMarker.color.b = 0.0;
-
-                                	myMarker.scale.x = 0.05;
-                                	myMarker.scale.y = 0.05;
-                                	myMarker.scale.z = 0.05;
-                               		myMarker.color.a = 0.5;
-					
+					// These set the color of the marker
+					myMarker.color.r = 1.0;
+					myMarker.color.g = 1.0;
+					myMarker.color.b = 1.0;
+					myMarker.scale.x = 0.05;
+					myMarker.scale.y = 0.05;
+					myMarker.scale.z = 0.05;
+					myMarker.color.a = 0.5;
 					myMarker.lifetime = ros::Duration(1.0);
-					
-					markerarray.markers.push_back(myMarker);	
-                        		// vis_pub.publish( marker );
-		
-				}	
+					markerarray.markers.push_back(myMarker);
+
+					trajectory_pub.publish(markerarray);
+
+				}
+
+				return;
 			}
 
-			plane_pub.publish(markerarray);
-
-		}
 
 
-		/* Describe this method 
-		 * Input 
-		 * Returns 
-		 */
-		geometry_msgs::Pose fitCurve(void) {
-			
-			// Fit a plane to the data
-			using namespace arma;
-                        mat A(recentPointsIndex, 3);
-			mat X(3, 1); // what we will solve for
-			mat B(recentPointsIndex, 1); // These are the Z coordinates of the observed points
+			/* Describe this method here
+			*/
+			geometry_msgs::Pose findIntersection(double a, double b, double c, arma::mat observedPoint_Plane, arma::mat R_robot_p) {
 
-			geometry_msgs::PointStamped nextPoint;
-			for (int i = 0; i < recentPointsIndex; ++i) {
-				
-				nextPoint = recentPoints[i];
-				A(i, 0) = nextPoint.point.x;
-				A(i, 1) = nextPoint.point.y;
-				A(i, 2) = nextPoint.point.z;
+				geometry_msgs::Pose desiredPose;	
 
-				B(i, 0) = 1;
+				// The parameters a, b, c describe the parabola   
+				// z = (a)y^2 + (b)y + c
+
+				// Compute the initial x
+
+				double plane_x = observedPoint_Plane(0, 0);
+
+				for (int i = 0; i < 3; i = i + 0.1) {
+
+					double newY = i;
+					double newZ = predictParabola(a, b, c, newY);	
+
+					// Convert point into the robot's frame 
+					arma::mat predicted_point_plane_frame(4, 1);
+					predicted_point_plane_frame(0, 0) = plane_x;
+					predicted_point_plane_frame(1, 0) = newY;
+					predicted_point_plane_frame(2, 0) = newZ;
+					predicted_point_plane_frame(3, 0) = 1.0; 
+
+					// Convert between the two frames
+					arma::mat predicted_point_robot_frame = R_robot_p * predicted_point_plane_frame;  
+
+					if ( predicted_point_robot_frame(1, 0) > 0 ) {
+
+						// DesiredPose has position and quaterion fields		
+						desiredPose.position.x = plane_x; 
+						desiredPose.position.y = newY;
+						desiredPose.position.z = newZ;
+
+						// Print for testing
+						std::cout << "\n";
+						std::cout << "desiredPose.position.x found";
+						std::cout << "\n";	
+					}						
+				}
+
+
+				return desiredPose;
 			}
-			
-			A.print();
-				
-			// Use pinv to get psuedo inverse?	
-			X = inv( A.t() * A ) *  A.t() * B;
-			
-			// Include a point on the plane
-			double x = A(3, 0); 
-			double y = A(3, 1);
-			double z = A(3, 2);
 
-			//if (  rand() > 0.98 ) {
+
+
+			/* Describe this method
+			 * Input: 
+			 * Return: 
+			 */ 
+			void plotPlane(double a, double b, double c, double x_On_Plane, double y_On_Plane, double z_On_Plane) {
+
+				// The equation of a plane is 	
+				// ax + by + c = z;
+
+				std::cout << "\n";
+				std::cout << "PLOTTING PLANE";
+				std::cout << "\n";	
+
+				double increment = 0.0075;
+				double maxValue = 0.02; //0.75;
+
+				double z = 0;
+
+				int count = 0;
+
+				visualization_msgs::MarkerArray markerarray;	
+			
+				for (double x = x_On_Plane - maxValue; x < maxValue; x = x + increment) {
+					for (double y = y_On_Plane - maxValue; y < maxValue; y = y + increment) {
+
+						// This depends on how you define the plane
+						// IMPORTANT!!
+						z = (1 - (a * x) - (b * y) ) / ( c );  	
+
+						// myMarker.action = visualization_msgs::myMarker::ADD;
+						// publishMarker(x, y, z, true);
+						visualization_msgs::Marker myMarker;
+						myMarker.header.frame_id = "base";
+						myMarker.header.stamp = ros::Time();
+						myMarker.ns = "my_namespace";
+
+						myMarker.id = planeIDStart + 1;
+						planeIDStart = planeIDStart + 1;
+						count = count + 1;
+
+						myMarker.type = visualization_msgs::Marker::SPHERE;
+						myMarker.action = visualization_msgs::Marker::ADD;
+
+						myMarker.pose.position.x = x;
+						myMarker.pose.position.y = y;
+						myMarker.pose.position.z = z;
+
+						myMarker.pose.orientation.x = 0.0;
+						myMarker.pose.orientation.y = 0.0;
+						myMarker.pose.orientation.z = 0.0;
+						myMarker.pose.orientation.w = 1.0;
+
+						// These set the color of the marker
+						myMarker.color.r = 0.0;
+						myMarker.color.g = 1.0;
+						myMarker.color.b = 0.0;
+						myMarker.scale.x = 0.05;
+						myMarker.scale.y = 0.05;
+						myMarker.scale.z = 0.05;
+						myMarker.color.a = 0.5;
+						myMarker.lifetime = ros::Duration(1.0);
+						markerarray.markers.push_back(myMarker);	
+					}	
+				}
+				plane_pub.publish(markerarray);
+
+			}
+
+
+			/* Describe this method 
+			 * Input 
+			 * Returns 
+			 */
+			geometry_msgs::Pose fitCurve(void) {
+
+				// Fit a plane to the data
+				using namespace arma;
+				mat A(recentPointsIndex, 3);
+				mat X(3, 1); // what we will solve for
+				mat B(recentPointsIndex, 1); // These are the Z coordinates of the observed points
+
+				// This will hold the observed points converted to the plane's frame
+				mat obs_points_plane[recentPointsIndex];
+
+				geometry_msgs::PointStamped nextPoint;
+				for (int i = 0; i < recentPointsIndex; ++i) {
+
+					nextPoint = recentPoints[i];
+					A(i, 0) = nextPoint.point.x;
+					A(i, 1) = nextPoint.point.y;
+					A(i, 2) = nextPoint.point.z;
+
+					B(i, 0) = 1;
+				}
+
+				// A.print();
+
+				// Use pinv to get psuedo inverse?	
+				X = inv( A.t() * A ) *  A.t() * B;
+
+				// Include a point on the plane
+				double x = A(3, 0); 
+				double y = A(3, 1);
+				double z = A(3, 2);
+
 				plotPlane( X(0, 0), X(1, 0), X(2, 0), x, y, z );	
-			//}
-			// plotPlane(0, 0, 1);
-			
-			// Figure out where the ball crosses robot's y = 0
-			
 
-			// Return the pose
-			geometry_msgs::Pose m;
-			m.position.x = 1;
-			m.position.y = 1;
-			m.position.z = 1;
+				// Construct the rotation matrix 
+				mat R_p_robot(4, 4);
+				// Set the bottom row
+				R_p_robot(3, 0) = 0.0; 
+				R_p_robot(3, 1) = 0.0;
+				R_p_robot(3, 2) = 0.0;
+				R_p_robot(3, 3) = 1.0;
+				// Set the first row
+				R_p_robot(0, 0) = X(0, 0);
+				R_p_robot(0, 1) = - 1 * X(1, 0);
+				R_p_robot(0, 2) = 0.0;
+				R_p_robot(0, 3) = x;
+				// Set the second row
+				R_p_robot(1, 0) = X(1, 0);
+				R_p_robot(1, 1) = X(0, 0);
+				R_p_robot(1, 2) = 0.0;
+				R_p_robot(1, 3) = y;
+				// Set the third row
+				R_p_robot(2, 0) = 0.0;
+				R_p_robot(2, 1) = 0.0;
+				R_p_robot(2, 2) = 1.0;
+				R_p_robot(2, 3) = z;
 
-			return m;
-		}
+				// Convert the points to the plane's frame
+				for (int i = 0; i < recentPointsIndex; ++i) {
 
+					mat nextPoint(4, 1);
+					nextPoint(0, 0) = recentPoints[i].point.x;
+					nextPoint(1, 0) = recentPoints[i].point.y;
+					nextPoint(2, 0) = recentPoints[i].point.z;
+					nextPoint(3, 0) = 1.0;	
+
+					obs_points_plane[i] = R_p_robot * nextPoint; 
+
+					// Print for testing
+					// cout << "\n";
+					// obs_points_plane[i].print();
+					// cout << "\n";	
+				}
+
+				// Fit a parabola to the points
+				// Experimentally, the x coordinate of the point in the plane's frame 
+				// does not change so our observed points are now a function of 2 variables
+				// Construct the arrays to solve for the parabola parameters
+				mat observed_y_plane(3, recentPointsIndex);
+				mat observed_z_plane(1, recentPointsIndex);
+				mat parameters(1, 3);
+
+				// Set the matrices
+				// Convert the points to the plane's frame
+				for (int i = 0; i < recentPointsIndex; ++i) {
+
+					// z = (a)y^2 + (b)y + c
+					observed_y_plane(0, i) = pow( (obs_points_plane[i](1, 0) ), 2);
+					observed_y_plane(1, i) = obs_points_plane[i](1, 0); 
+					observed_y_plane(2, i) = 1.0;
+
+					observed_z_plane(0, i) = obs_points_plane[i](2, 0);
+
+					// Print for testing
+					// cout << "\n";
+					// obs_points_plane[i].print();
+					// cout << "\n"; 
+				}
+
+				// These values define the parabola in the plane
+				// z = (a)y^2 + (b)y + c
+
+				parameters = observed_z_plane * ( inv( observed_y_plane.t() * observed_y_plane ) * observed_y_plane.t() );
+
+				// Plot the trajectory with markers
+				// plotTrajectory( parameters(0, 0), parameters(0, 1), parameters(0, 2), obs_points_plane[recentPointsIndex - 1], R_p_robot.t() );
+
+				// Figure out where the ball crosses robot's y = 0
+				// Do a line search? Can I transform the normal vector into the plane's frame?
+
+				// Take the function as defined by the parameters, z(y)
+				// Start with center point, compute z(y)
+				// Convert the point (x, y, z) into the robot's frame
+				// Check if the point has crossed the plane of contact - ie y = 0 (in the robot's frame)
+				// When we find the point on the parabola that crosses the plane, return it
+
+				// This returns the desired pose
+				// findIntersection(double a, double b, double c, arma::mat observedPoint_Plane, arma::mat R_robot_p)
+				// Return the pose
+				geometry_msgs::Pose m;
+				m.position.x = 1;
+				m.position.y = 1;
+				m.position.z = 1;
+
+				return m;
+				//return findIntersection(parameters(0, 0), parameters(0, 1), parameters(0, 2), 
+				//		obs_points_plane[recentPointsIndex - 1], R_p_robot.t() );
+			}
+
+
+
+			/* Describe this method here
+			 * Input: 
+			 * Return:
+			 */ 
+			geometry_msgs::Pose computePose(nodelet_pcl_demo::dataPoint data) {
+
+				// This is the time until the ball crosses the robot frame's y-axis
+				double time = calculateTime( double(data.position.y), double(data.velocity.y) );
+
+				// Acceleration due to gravity  
+				double g = 9.8;
+
+				// Compute 
+				double x = computeLocation(time, data.position.x, data.velocity.x, 0.0);
+
+				double z = computeLocation(time, data.position.z, data.velocity.z, g);
+
+				// These are the (x, y, z) locations of the ball in the robot's frame
+
+				// Move the arm to this (x, y, z)       
+				geometry_msgs::Pose target_pose;
+
+				// What to set the orientation to?
+				target_pose.orientation.w = 1.0;
+
+				// FIX ME!!!!
+				// FIX ME!!!!
+				target_pose.position.x = 0.4;
+				target_pose.position.y = 0.4;
+				target_pose.position.z = 0.4;
+
+				return target_pose;
+			}
+
+
+		};
 
 
 		/* Describe this method here
 		 * Input: 
-		 * Return:
-		 */ 
-		geometry_msgs::Pose computePose(nodelet_pcl_demo::dataPoint data) {
+		 * Returns: 
+		 */
+		double calculateTime(double y_position, double y_velocity) {
 
-			// This is the time until the ball crosses the robot frame's y-axis
+			// delta_y = (velocity_y * t) + (0.5 * acceleration_y * t^2)    
+
+			return ( (-1 * y_position) / (y_velocity) );
+		}
+
+		/* Describe this method here
+		 * Inputs: 
+		 * Returns: 
+		 */
+		double computeLocation(double time, double position, double velocity, double acceleration) {
+
+			double delta_position = (velocity * time) + (0.5 * (acceleration * pow(time, 2) ) );
+
+			return delta_position;
+		}
+
+		/* Describe this method
+		 * Input: 
+		 * Return:  
+		 */
+		void computePose(nodelet_pcl_demo::dataPoint data) {
+
+			// This is the time until the ball crosses the robot frame's x-axis
 			double time = calculateTime( double(data.position.y), double(data.velocity.y) );
 
 			// Acceleration due to gravity  
@@ -850,91 +1139,31 @@ class ClusterExtractor {
 
 			// What to set the orientation to?
 			target_pose.orientation.w = 1.0;
-				
-			// FIX ME!!!!
-			// FIX ME!!!!
-			target_pose.position.x = 0.4;
-			target_pose.position.y = 0.4;
-			target_pose.position.z = 0.4;
 
-			return target_pose;
+			target_pose.position.x = x;
+			target_pose.position.y = 0;
+			target_pose.position.z = z;
+
+			// move_group.setPoseTarget(target_pose1);      
+
+			return;
 		}
 
+		/* Main function where execution begins
+		*/
+		int main(int argc, char **argv) {
 
-};
+			ros::init(argc, argv, "cluster_extractor");
 
+			// FIX ME - add pause to let ROS system get running
+			// FIX later	
+			// sleep(20);
 
-/* Describe this method here
- * Input: 
- * Returns: 
- */
-double calculateTime(double y_position, double y_velocity) {
+			ClusterExtractor extractor;
 
-	// delta_y = (velocity_y * t) + (0.5 * acceleration_y * t^2)    
+			// Set node to spin indefinitely
+			ros::spin();
 
-	return ( (-1 * y_position) / (y_velocity) );
-}
-
-/* Describe this method here
- * Inputs: 
- * Returns: 
- */
-double computeLocation(double time, double position, double velocity, double acceleration) {
-
-	double delta_position = (velocity * time) + (0.5 * (acceleration * pow(time, 2) ) );
-
-	return delta_position;
-}
-
-/* Describe this method
- * Input: 
- * Return:  
- */
-void computePose(nodelet_pcl_demo::dataPoint data) {
-
-	// This is the time until the ball crosses the robot frame's x-axis
-	double time = calculateTime( double(data.position.y), double(data.velocity.y) );
-
-	// Acceleration due to gravity  
-	double g = 9.8;
-
-	// Compute 
-	double x = computeLocation(time, data.position.x, data.velocity.x, 0.0);
-
-	double z = computeLocation(time, data.position.z, data.velocity.z, g);
-
-	// These are the (x, y, z) locations of the ball in the robot's frame
-
-	// Move the arm to this (x, y, z)       
-	geometry_msgs::Pose target_pose;
-
-	// What to set the orientation to?
-	target_pose.orientation.w = 1.0;
-
-	target_pose.position.x = x;
-	target_pose.position.y = 0;
-	target_pose.position.z = z;
-
-	// move_group.setPoseTarget(target_pose1);      
-
-	return;
-}
-
-/* Main function where execution begins
-*/
-int main(int argc, char **argv) {
-
-	ros::init(argc, argv, "cluster_extractor");
-
-	// FIX ME - add pause to let ROS system get running
-	// FIX later	
-	// sleep(20);
-
-	ClusterExtractor extractor;
-
-	// Set node to spin indefinitely
-	ros::spin();
-
-	return 0;
-}
+			return 0;
+		}
 
