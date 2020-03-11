@@ -29,6 +29,8 @@
 #include <unistd.h>
 #include <armadillo>
 #include <visualization_msgs/MarkerArray.h>
+#include <chrono>
+#include <thread>
 
 typedef pcl::PointCloud<pcl::PointXYZ> PCLCloud;
 
@@ -223,8 +225,6 @@ class ClusterExtractor {
 		}
 		
 		 void callback(const ros::TimerEvent& event) {
-			
-	 		//std::cout << "\n RANNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN \n";		 
 
                         if ( readyToFit == true ) {
                                 try {
@@ -498,10 +498,6 @@ class ClusterExtractor {
 		 */ 
 		void cloudcb(const sensor_msgs::PointCloud2ConstPtr &scan) {
 
-			//std::cout << "\n";
-			//std::cout << "cloud call back ran";
-			//std::cout << "\n";
-
 			// This will publish the markers in RVIZ which describe 
 			// the volume over which we care about/filter over 
 			if ( hasPublishedVolume == false ) {	
@@ -772,8 +768,6 @@ class ClusterExtractor {
 				// The parameters a, b, c describe the parabola   
 				// z = (a)y^2 + (b)y + c
 				
-				std::cout << "\nPLOT TRAJECTORY RAN\n";
-
 				// Compute the initial x	
 				
 				double plane_x = observedPoint_Plane(0, 0);	
@@ -783,7 +777,7 @@ class ClusterExtractor {
 					
 				markerIDCount = markerIDCount + 1;
 
-				for (double i = 0.0; i < 2; i = i + 0.2) {
+				for (double i = -1.0; i < 1; i = i + 0.05) {
 
 					// double newY = observedPoint_Plane(1, 0); //i + initial_y;
 					// double newZ = observedPoint_Plane(2, 0); // predictParabola(a, b, c, newY);
@@ -827,9 +821,9 @@ class ClusterExtractor {
 					myMarker.color.r = 1.0;
 					myMarker.color.g = 0.0;
 					myMarker.color.b = 0.0;
-					myMarker.scale.x = 0.1;
-					myMarker.scale.y = 0.1;
-					myMarker.scale.z = 0.1;
+					myMarker.scale.x = 0.05;
+					myMarker.scale.y = 0.05;
+					myMarker.scale.z = 0.05;
 					myMarker.color.a = 0.5;
 					// myMarker.lifetime = ros::Duration(1.0);
 					markerarray.markers.push_back(myMarker);
@@ -876,11 +870,6 @@ class ClusterExtractor {
 						desiredPose.position.x = plane_x; 
 						desiredPose.position.y = newY;
 						desiredPose.position.z = newZ;
-
-						// Print for testing
-						//std::cout << "\n";
-						//std::cout << "desiredPose.position.x found";
-						//std::cout << "\n";	
 					}						
 				}
 
@@ -899,18 +888,8 @@ class ClusterExtractor {
 				// The equation of a plane is 	
 				// ax + by + c = z;
 
-				//std::cout << "\n";
-				//std::cout << "PLOTTING PLANE";
-				//std::cout << "\n";	
-
 				double increment = 0.0075;
-				double maxValue = 0.15; //0.75;
-				
-				/* For testing
-				 */
-				//std::cout << x_On_Plane;
-				//std::cout << y_On_Plane;
-
+				double maxValue = 0.30; //0.75;
 			
 				double z = 0;
 
@@ -925,9 +904,6 @@ class ClusterExtractor {
 						// IMPORTANT!!
 						z = (1 - (a * x) - (b * y) ) / ( c );  	
 						
-						//std::cout << "\n";
-						//std::cout << z;			
-
 						// myMarker.action = visualization_msgs::myMarker::ADD;
 						// publishMarker(x, y, z, true);
 						visualization_msgs::Marker myMarker;
@@ -964,9 +940,6 @@ class ClusterExtractor {
 					}	
 				}
 				
-				//std::cout << "\n the count is: ";
-				//std::cout << count;
-				//std::cout << "\n";
 				plane_pub.publish(markerarray);
 
 			}
@@ -978,10 +951,6 @@ class ClusterExtractor {
 			 */
 			geometry_msgs::Pose fitCurve(void) {
 			
-				//std::cout << "\n";
-				//std::cout << "fitCurve ran";
-				//std:: cout << "\n";	
-
 				// Fit a plane to the data
 				using namespace arma;
 				mat A(recentPointsIndex, 3);
@@ -1000,12 +969,7 @@ class ClusterExtractor {
 					A(i, 2) = nextPoint.point.z;
 
 					B(i, 0) = 1;
-
-					//std::cout << "\n";
-					//A.print();
 				}
-
-				// A.print();
 
 				// Use pinv to get psuedo inverse?	
 				X = inv( A.t() * A ) *  A.t() * B;
@@ -1051,11 +1015,6 @@ class ClusterExtractor {
 					nextPoint(3, 0) = 1.0;	
 
 					obs_points_plane[i] = R_p_robot * nextPoint; 
-
-					// Print for testing
-					// cout << "\n";
-					// obs_points_plane[i].print();
-					// cout << "\n";	
 				}
 
 				// Fit a parabola to the points
@@ -1076,11 +1035,6 @@ class ClusterExtractor {
 					observed_y_plane(2, i) = 1.0;
 
 					observed_z_plane(0, i) = obs_points_plane[i](2, 0);
-
-					// Print for testing
-					// cout << "\n";
-					// obs_points_plane[i].print();
-					// cout << "\n"; 
 				}
 
 				// These values define the parabola in the plane
@@ -1220,8 +1174,11 @@ class ClusterExtractor {
 
 			ros::init(argc, argv, "cluster_extractor");
 			
+			std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 			ClusterExtractor extractor;
-				
+			
+			std::this_thread::sleep_for(std::chrono::milliseconds(5000));	
+
 			ros::spin();
 
 			return 0;
