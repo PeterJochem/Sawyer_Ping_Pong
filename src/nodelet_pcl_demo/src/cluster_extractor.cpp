@@ -55,8 +55,12 @@ class ClusterExtractor {
 		ros::Publisher pose_pub; 
 
 		ros::Publisher plane_pub;
-		
+
 		ros::Publisher trajectory_pub;
+
+		// Timer field for post processing
+		// point cloud data
+		ros::Timer timer;
 
 		// This is for testing		
 		ros::Publisher rate_pub;
@@ -130,6 +134,11 @@ class ClusterExtractor {
 		double filter_maxZ_camera_frame = 1.0;
 
 	public:
+
+		// This records if we are ready to fit a plane/parabola
+		// to our data
+		bool readyToFit = false;
+
 		// This is the class's constructor
 		ClusterExtractor() {
 
@@ -155,11 +164,15 @@ class ClusterExtractor {
 			pose_pub = n_.advertise<geometry_msgs::Pose>("/desired_pose", 1);	
 
 			rate_pub = n_.advertise<geometry_msgs::Point>("/proccesed", 100);
-			
-			trajectory_pub = n_.advertise<visualization_msgs::MarkerArray>("/trajectory", 4);
+
+			trajectory_pub = n_.advertise<visualization_msgs::MarkerArray>("/trajectory", 400);
 
 			// How big to make the queue? 
 			dataPoints = n_.advertise<nodelet_pcl_demo::dataPoint>("/position_and_velocity", 1);	
+			
+			
+			// Set up a timer to read from the buffer
+			timer = n_.createTimer(ros::Duration(1.0), &ClusterExtractor::callback, this);
 
 			// Construct the transform listener?	
 			// listener = TransformListener(ros::Duration max_cache_time=ros::Duration(DEFAULT_CACHE_TIME), bool spin_thread=true);
@@ -208,6 +221,22 @@ class ClusterExtractor {
 			filter_maxZ_robot_frame = maxCorner.point.z;
 
 		}
+		
+		 void callback(const ros::TimerEvent& event) {
+			
+	 		//std::cout << "\n RANNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN \n";		 
+
+                        if ( readyToFit == true ) {
+                                try {
+                                        readyToFit = false;
+                                        fitCurve();         
+                                }
+                                catch( ... ) {
+                                }
+                        }
+
+                }
+
 
 		/* This method converts a (x, y, z) location from the TABLE'S frame
 		 * into the robot's frame. This is for converting the parameters describing
@@ -469,6 +498,10 @@ class ClusterExtractor {
 		 */ 
 		void cloudcb(const sensor_msgs::PointCloud2ConstPtr &scan) {
 
+			//std::cout << "\n";
+			//std::cout << "cloud call back ran";
+			//std::cout << "\n";
+
 			// This will publish the markers in RVIZ which describe 
 			// the volume over which we care about/filter over 
 			if ( hasPublishedVolume == false ) {	
@@ -585,7 +618,7 @@ class ClusterExtractor {
 			// Convert between the two frames
 			listener.transformPoint("base", point_in_camera_frame, point_in_base_frame);
 
-			int numPoints = 5;
+			int numPoints = 4;
 
 
 			// Check that the computed point is not the 0 point in the CAMERA's frame
@@ -604,19 +637,17 @@ class ClusterExtractor {
 			}
 			else if ( (length > 0) && (recentPointsIndex >= numPoints) ) {
 
+				// DO THIS OUTSIDE THE POINT CLOUD PROCESSING!!
 				bool exceptionOccured = false;		
 
 				// Call function to compute the ball's parabola 
 				try {
-					fitCurve();		
+					readyToFit = true;
 				}
 				catch( ... ) {
 					exceptionOccured = true;
 				}
 
-				// if ( exceptionOccured != true) {
-				// Reset the index	
-				recentPointsIndex = 0;
 			}
 
 			// Compute the new velocity
@@ -675,6 +706,7 @@ class ClusterExtractor {
 			}
 
 			// Publish the marker of the ball's position to RVIZ
+
 			visualization_msgs::Marker marker;
 			marker.header.frame_id = "base";
 			marker.header.stamp = ros::Time();
@@ -700,9 +732,10 @@ class ClusterExtractor {
 			marker.color.g = 1.0;
 			marker.color.b = 1.0;
 
-			marker.lifetime = ros::Duration(3.0);
+			marker.lifetime = ros::Duration(300.0);
 
 			vis_pub.publish( marker );			
+
 
 			}
 
@@ -738,6 +771,8 @@ class ClusterExtractor {
 
 				// The parameters a, b, c describe the parabola   
 				// z = (a)y^2 + (b)y + c
+				
+				std::cout << "\nPLOT TRAJECTORY RAN\n";
 
 				// Compute the initial x	
 				
@@ -745,11 +780,15 @@ class ClusterExtractor {
 				double initial_y = observedPoint_Plane(1, 0);
 
 				visualization_msgs::MarkerArray markerarray;
+					
+				markerIDCount = markerIDCount + 1;
 
-				for (int i = 0; i < 3; i = i + 0.1) {
+				for (double i = 0.0; i < 2; i = i + 0.2) {
 
+					// double newY = observedPoint_Plane(1, 0); //i + initial_y;
+					// double newZ = observedPoint_Plane(2, 0); // predictParabola(a, b, c, newY);
 					double newY = i + initial_y;
-					double newZ = predictParabola(a, b, c, newY);
+                                        double newZ = predictParabola(a, b, c, newY);
 
 					// Convert point into the robot's frame 
 					arma::mat predicted_point_plane_frame(4, 1);
@@ -761,22 +800,23 @@ class ClusterExtractor {
 					// Convert between the two frames
 					arma::mat predicted_point_robot_frame = R_robot_p * predicted_point_plane_frame;
 
-					visualization_msgs::MarkerArray markerarray;
 
 					visualization_msgs::Marker myMarker;
 					myMarker.header.frame_id = "base";
 					myMarker.header.stamp = ros::Time();
 					myMarker.ns = "my_namespace";
 
-					myMarker.id = trajectoryStart;
-					trajectoryStart = trajectoryStart + 1;
+					myMarker.id = markerIDCount;
+					markerIDCount = markerIDCount + 1;
+					
 
 					myMarker.type = visualization_msgs::Marker::SPHERE;
 					myMarker.action = visualization_msgs::Marker::ADD;
+					
+                                        myMarker.pose.position.x = predicted_point_robot_frame(0, 0);
+                                        myMarker.pose.position.y = predicted_point_robot_frame(1, 0);
+                                        myMarker.pose.position.z = predicted_point_robot_frame(2, 0);
 
-					myMarker.pose.position.x = predicted_point_robot_frame(0, 0);
-					myMarker.pose.position.y = predicted_point_robot_frame(1, 0);
-					myMarker.pose.position.z = predicted_point_robot_frame(2, 0);
 
 					myMarker.pose.orientation.x = 0.0;
 					myMarker.pose.orientation.y = 0.0;
@@ -785,18 +825,17 @@ class ClusterExtractor {
 
 					// These set the color of the marker
 					myMarker.color.r = 1.0;
-					myMarker.color.g = 1.0;
-					myMarker.color.b = 1.0;
-					myMarker.scale.x = 0.05;
-					myMarker.scale.y = 0.05;
-					myMarker.scale.z = 0.05;
+					myMarker.color.g = 0.0;
+					myMarker.color.b = 0.0;
+					myMarker.scale.x = 0.1;
+					myMarker.scale.y = 0.1;
+					myMarker.scale.z = 0.1;
 					myMarker.color.a = 0.5;
-					myMarker.lifetime = ros::Duration(1.0);
+					// myMarker.lifetime = ros::Duration(1.0);
 					markerarray.markers.push_back(myMarker);
-
-					trajectory_pub.publish(markerarray);
-
 				}
+
+				trajectory_pub.publish(markerarray);
 
 				return;
 			}
@@ -839,9 +878,9 @@ class ClusterExtractor {
 						desiredPose.position.z = newZ;
 
 						// Print for testing
-						std::cout << "\n";
-						std::cout << "desiredPose.position.x found";
-						std::cout << "\n";	
+						//std::cout << "\n";
+						//std::cout << "desiredPose.position.x found";
+						//std::cout << "\n";	
 					}						
 				}
 
@@ -860,25 +899,34 @@ class ClusterExtractor {
 				// The equation of a plane is 	
 				// ax + by + c = z;
 
-				std::cout << "\n";
-				std::cout << "PLOTTING PLANE";
-				std::cout << "\n";	
+				//std::cout << "\n";
+				//std::cout << "PLOTTING PLANE";
+				//std::cout << "\n";	
 
 				double increment = 0.0075;
-				double maxValue = 0.02; //0.75;
+				double maxValue = 0.15; //0.75;
+				
+				/* For testing
+				 */
+				//std::cout << x_On_Plane;
+				//std::cout << y_On_Plane;
 
+			
 				double z = 0;
 
 				int count = 0;
 
 				visualization_msgs::MarkerArray markerarray;	
-			
-				for (double x = x_On_Plane - maxValue; x < maxValue; x = x + increment) {
-					for (double y = y_On_Plane - maxValue; y < maxValue; y = y + increment) {
+				
+				for (double x = x_On_Plane - maxValue; x < x_On_Plane + maxValue; x = x + increment) {
+					for (double y = y_On_Plane - maxValue; y < y_On_Plane + maxValue; y = y + increment) {
 
 						// This depends on how you define the plane
 						// IMPORTANT!!
 						z = (1 - (a * x) - (b * y) ) / ( c );  	
+						
+						//std::cout << "\n";
+						//std::cout << z;			
 
 						// myMarker.action = visualization_msgs::myMarker::ADD;
 						// publishMarker(x, y, z, true);
@@ -887,17 +935,17 @@ class ClusterExtractor {
 						myMarker.header.stamp = ros::Time();
 						myMarker.ns = "my_namespace";
 
-						myMarker.id = planeIDStart + 1;
+						myMarker.id = planeIDStart;
 						planeIDStart = planeIDStart + 1;
 						count = count + 1;
 
 						myMarker.type = visualization_msgs::Marker::SPHERE;
 						myMarker.action = visualization_msgs::Marker::ADD;
 
-						myMarker.pose.position.x = x;
-						myMarker.pose.position.y = y;
-						myMarker.pose.position.z = z;
-
+						myMarker.pose.position.x = x; //x;
+						myMarker.pose.position.y = y; //y;
+						myMarker.pose.position.z = z; //z;
+							
 						myMarker.pose.orientation.x = 0.0;
 						myMarker.pose.orientation.y = 0.0;
 						myMarker.pose.orientation.z = 0.0;
@@ -907,14 +955,18 @@ class ClusterExtractor {
 						myMarker.color.r = 0.0;
 						myMarker.color.g = 1.0;
 						myMarker.color.b = 0.0;
-						myMarker.scale.x = 0.05;
-						myMarker.scale.y = 0.05;
-						myMarker.scale.z = 0.05;
+						myMarker.scale.x = 0.025;
+						myMarker.scale.y = 0.025;
+						myMarker.scale.z = 0.025;
 						myMarker.color.a = 0.5;
-						myMarker.lifetime = ros::Duration(1.0);
+						myMarker.lifetime = ros::Duration(100.0);
 						markerarray.markers.push_back(myMarker);	
 					}	
 				}
+				
+				//std::cout << "\n the count is: ";
+				//std::cout << count;
+				//std::cout << "\n";
 				plane_pub.publish(markerarray);
 
 			}
@@ -925,6 +977,10 @@ class ClusterExtractor {
 			 * Returns 
 			 */
 			geometry_msgs::Pose fitCurve(void) {
+			
+				//std::cout << "\n";
+				//std::cout << "fitCurve ran";
+				//std:: cout << "\n";	
 
 				// Fit a plane to the data
 				using namespace arma;
@@ -944,6 +1000,9 @@ class ClusterExtractor {
 					A(i, 2) = nextPoint.point.z;
 
 					B(i, 0) = 1;
+
+					//std::cout << "\n";
+					//A.print();
 				}
 
 				// A.print();
@@ -952,9 +1011,10 @@ class ClusterExtractor {
 				X = inv( A.t() * A ) *  A.t() * B;
 
 				// Include a point on the plane
-				double x = A(3, 0); 
-				double y = A(3, 1);
-				double z = A(3, 2);
+				// SHOULD THIS BE FLIPPED?
+				double x = A(1, 0); 
+				double y = A(1, 1);
+				double z = A(1, 2);
 
 				plotPlane( X(0, 0), X(1, 0), X(2, 0), x, y, z );	
 
@@ -1029,7 +1089,8 @@ class ClusterExtractor {
 				parameters = observed_z_plane * ( inv( observed_y_plane.t() * observed_y_plane ) * observed_y_plane.t() );
 
 				// Plot the trajectory with markers
-				// plotTrajectory( parameters(0, 0), parameters(0, 1), parameters(0, 2), obs_points_plane[recentPointsIndex - 1], R_p_robot.t() );
+				
+				plotTrajectory( parameters(0, 0), parameters(0, 1), parameters(0, 2), obs_points_plane[recentPointsIndex - 1], inv(R_p_robot) );
 
 				// Figure out where the ball crosses robot's y = 0
 				// Do a line search? Can I transform the normal vector into the plane's frame?
@@ -1047,6 +1108,9 @@ class ClusterExtractor {
 				m.position.x = 1;
 				m.position.y = 1;
 				m.position.z = 1;
+				
+				// Remember to reset!!
+				recentPointsIndex = 0;
 
 				return m;
 				//return findIntersection(parameters(0, 0), parameters(0, 1), parameters(0, 2), 
@@ -1091,7 +1155,7 @@ class ClusterExtractor {
 
 
 		};
-
+		
 
 		/* Describe this method here
 		 * Input: 
@@ -1149,19 +1213,15 @@ class ClusterExtractor {
 			return;
 		}
 
+
 		/* Main function where execution begins
 		*/
 		int main(int argc, char **argv) {
 
 			ros::init(argc, argv, "cluster_extractor");
-
-			// FIX ME - add pause to let ROS system get running
-			// FIX later	
-			// sleep(20);
-
+			
 			ClusterExtractor extractor;
-
-			// Set node to spin indefinitely
+				
 			ros::spin();
 
 			return 0;
