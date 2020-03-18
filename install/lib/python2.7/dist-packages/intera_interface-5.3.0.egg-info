@@ -1,0 +1,11 @@
+Metadata-Version: 1.0
+Name: intera_interface
+Version: 5.3.0
+Summary: Python interface classes for control of
+    Intera-enable Robots from Rethink Robotics.
+Home-page: http://sdk.rethinkrobotics.com/intera/
+Author: Rethink Robotics Inc.
+Author-email: rsdk.support@rethinkrobotics.com
+License: Apache 2.0
+Description: UNKNOWN
+Platform: UNKNOWN

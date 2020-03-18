@@ -1,0 +1,8 @@
+prefix=/home/peter/Desktop/WinterProject/catkin_ws/install
+
+Name: nodelet_pcl_demo
+Description: Description of nodelet_pcl_demo
+Version: 0.0.0
+Cflags: -I${prefix}/include
+Libs: -L${prefix}/lib 
+Requires: 

@@ -1,0 +1,8 @@
+prefix=/home/peter/Desktop/WinterProject/catkin_ws/install
+
+Name: sawyer_ping_pong
+Description: Description of sawyer_ping_pong
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

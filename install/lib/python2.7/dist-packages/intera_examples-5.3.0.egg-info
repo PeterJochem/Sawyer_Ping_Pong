@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: intera_examples
+Version: 5.3.0
+Summary: Example programs for Intera SDK usage.
+Home-page: http://sdk.rethinkrobotics.com/intera/
+Author: Rethink Robotics Inc.
+Author-email: rsdk.support@rethinkrobotics.com
+License: Apache 2.0
+Description: UNKNOWN
+Platform: UNKNOWN
