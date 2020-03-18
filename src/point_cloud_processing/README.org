@@ -1,1 +1,41 @@
+* Demo: Using PCL Nodelets
+  
+
+
+** Usage
+
+*** PCD Data
+	
+	To run:
+	#+BEGIN_SRC html
+	roslaunch nodelet_pcl_demo nodelet_table_extraction.launch pcd:=true
+	#+END_SRC
+	This will use the =pcd_to_pointcloud= node from the =pcl_ros= package to read
+	the PCD file, and repeatedly publish it on the =/camera/depth/points= topic
+	(at approx. 20Hz). The included PCD file is a slightly modified version of
+	the [[https://raw.github.com/PointCloudLibrary/data/master/tutorials/table_scene_lms400.pcd][table_scene_lms400.pcd]] file used in the [[http://pointclouds.org/documentation/tutorials/cluster_extraction.php#cluster-extraction][PCL Euclidean Cluster Extraction Tutorial]]. The only difference is that I've rotated the raw data by π radians about the x axis. This was to ensure that the coordinate systems when using the PCD data agreed with the data one would get when using =openni_launch= or =openni2_launch=.
+
+*** Live Data
+	#+BEGIN_SRC sh
+	roslaunch nodelet_pcl_demo nodelet_table_extraction.launch source:=<source>
+	#+END_SRC
+
+        The =source= parameter determines where the =sensor_msgs/PointCloud2= data comes from.
+        2. Use "realsense" for an Intel RealSense
+
+        You need to call the =/table_cutoff/update_table_model= service to update
+	the geometry of the table. When using live data, it makes sense to look at the =PlanarInlierCloud= in =rviz= to ensure that you are accurately
+	fitting the desired plane before calling this service. As before, the
+	service can be called at the command line using
+	#+BEGIN_SRC sh
+	rosservice call /table_cutoff/update_table_model "{}"
+	#+END_SRC
+
+	When using live data, you may have to tune some of the parameters in the
+	launch file to achieve the desired performance. Note that many of the
+	parameters can be tuned in real time using [[http://wiki.ros.org/rqt_reconfigure][rqt_reconfigure]].
+
+
+
+
 

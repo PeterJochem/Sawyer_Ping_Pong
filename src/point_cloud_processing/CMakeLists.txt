@@ -17,7 +17,6 @@ add_definitions(${PCL_DEFINITIONS})
 find_package(Armadillo REQUIRED)
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 
-
 add_message_files(
   FILES
   PointArray.msg
@@ -31,9 +30,7 @@ generate_messages(
   std_msgs
 )
 
-
 catkin_package()
-
 
 include_directories(include
   ${catkin_INCLUDE_DIRS}
@@ -44,11 +41,3 @@ add_executable(cluster_extractor src/cluster_extractor.cpp)
 add_dependencies(cluster_extractor ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(cluster_extractor ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${ARMADILLO_LIBRARIES})
 
-
-add_executable(moveRobot src/moveRobot.cpp)
-add_dependencies(moveRobot ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(moveRobot ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-
-add_executable(point_publisher src/point_publisher.cpp)
-add_dependencies(point_publisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(point_publisher ${catkin_LIBRARIES} ${PCL_LIBRARIES})

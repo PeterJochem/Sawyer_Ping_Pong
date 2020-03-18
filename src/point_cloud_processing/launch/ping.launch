@@ -4,7 +4,6 @@
   <arg name="source" default="realsense" doc="Describes the camera we are using"/> 
   <arg name="config" default="true"/>
   <!-- arg name="rviz_config" default="$(find sawyer_moveit_config)/launch/moveit.rviz" / -->
-   
  	
   <!-- Load the yaml file in describing the enviroment --> 
   <arg name="table_description_yaml_file" default="$(find sawyer_ping_pong)/urdf/box.yaml"/>   
@@ -45,48 +44,33 @@
   <!-- intel realsense, which publishes on /camera/depth/color/points instead of /camera/depth/points -->
   <remap from="/camera/depth/color/points" to="/camera/depth/points" />
 
-<include if="$(eval source == 'realsense')" file="$(find realsense2_camera)/launch/rs_camera.launch" >
+  <include if="$(eval source == 'realsense')" file="$(find realsense2_camera)/launch/rs_camera.launch" >
        <arg name="filters" value="pointcloud" />
   </include>
 
   <!-- launch the nodelet manager -->
   <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" />  
-
   
-  <node pkg="nodelet_pcl_demo" name="cluster_extraction" type="cluster_extractor" output="screen" />
+  <node pkg="point_cloud_processing" name="cluster_extraction" type="cluster_extractor" output="screen" />
 
-  <!-- node pkg="nodelet_pcl_demo" name="myMoveRobot_Node" type="moveRobot" output="screen" / -->
-  
- <node pkg="nodelet_pcl_demo" name="myMoveRobot_Node" type="moveArm" output="screen" />
+  <node pkg="point_cloud_processing" name="myMoveRobot_Node" type="moveArm" output="screen" />
 
   <!-- start rviz if vis arg is true -->
    <node pkg="rviz" type="rviz" respawn="false" name="rviz" if="$(arg vis)"
-        args="-d $(find nodelet_pcl_demo)/launch/ping_pong.rviz" />
+        args="-d $(find point_cloud_processing)/launch/ping.rviz" />
 
-	
   <param name="table_description" textfile="$(find sawyer_ping_pong)/urdf/box.urdf" />
 
-
-   <!-- MoveIt -->
-     <!--Node for trajectories, used with MoveIt -->
+  <!-- MoveIt -->
+  <!--Node for trajectories, used with MoveIt -->
   <node name="joint_trajectory_action_server" pkg="intera_interface" type="joint_trajectory_action_server.py" output="log"/>
 
   <include file="$(find sawyer_moveit_config)/launch/planning_context.launch">
-    <arg name="load_robot_description" value="true"/>
+   	<arg name="load_robot_description" value="true"/>
   </include>
 
-   <include file="$(find sawyer_moveit_config)/launch/sawyer_moveit.launch">
-    <arg name="load_robot_description" value="true" />
+  <include file="$(find sawyer_moveit_config)/launch/sawyer_moveit.launch">
+   	<arg name="load_robot_description" value="true" />
   </include>
-
-
-   <!-- include file="$(find sawyer_moveit_config)/launch/moveit_rviz.launch" -->
-    <!-- arg name="config" value="$(arg config)" / -->
-    <!-- arg name="rviz_config" value="$(arg rviz_config)" / --> 
-  <!-- /include -->
-
- 
-
-
 
 </launch>

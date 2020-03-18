@@ -3,10 +3,10 @@
   <name>point_cloud_processing</name>
   <version>0.0.0</version>
   <description>
-  This package takes in point cloud data from an Intel RealSense camera and extracts the center of the point cloud
+  This package can be used to process point cloud data from a Intel Real Sense camera. 
   </description>
 
-  <maintainer email="peterjochem2020@u.northwestern.edu">Peter Jochem</maintainer>
+  <maintainer email="PeterJochem2020@u.northwestern.edu">Peter Jochem</maintainer>
   <license>GPLv3</license>
 
   <buildtool_depend>catkin</buildtool_depend>

@@ -123,7 +123,6 @@ class ClusterExtractor {
 		double filter_minZ_table_frame;
 		double filter_maxZ_table_frame;
 
-
 		// Values in the camera frame
 		// We will set these when we initilaize the object
 		double filter_minX_camera_frame = 1.0;
@@ -172,12 +171,8 @@ class ClusterExtractor {
 			// How big to make the queue? 
 			dataPoints = n_.advertise<nodelet_pcl_demo::dataPoint>("/position_and_velocity", 1);	
 			
-			
 			// Set up a timer to read from the buffer
 			timer = n_.createTimer(ros::Duration(1.0), &ClusterExtractor::callback, this);
-
-			// Construct the transform listener?	
-			// listener = TransformListener(ros::Duration max_cache_time=ros::Duration(DEFAULT_CACHE_TIME), bool spin_thread=true);
 
 			// This records if we have published the volume markers yet
 			hasPublishedVolume = false;
@@ -374,7 +369,6 @@ class ClusterExtractor {
 				marker.scale.y = 0.05;
 				marker.scale.z = 0.05;
 				marker.color.a = 0.5; 
-
 			}
 			else { 
 				marker.color.r = 0.0;
@@ -463,7 +457,6 @@ class ClusterExtractor {
 			publishMarker(max_point_in_robot_frame.point.x, max_point_in_robot_frame.point.y, min_point_in_robot_frame.point.z, false);
 			publishMarker(max_point_in_robot_frame.point.x, min_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z, false);
 			publishMarker(max_point_in_robot_frame.point.x, max_point_in_robot_frame.point.y, max_point_in_robot_frame.point.z, false);
-
 
 		}
 
@@ -622,7 +615,6 @@ class ClusterExtractor {
 
 			int numPoints = 2;
 
-
 			// Check that the computed point is not the 0 point in the CAMERA's frame
 			if ( (length > 1) && (recentPointsIndex < numPoints) && (averageX != 0) && (averageY != 0) && (averageZ != 0)  ) {
 				// The length > 0 means the point cloud has more than 0 points in it
@@ -630,12 +622,9 @@ class ClusterExtractor {
 				recentPoints[recentPointsIndex].point.y = point_in_base_frame.point.y;
 				recentPoints[recentPointsIndex].point.z = point_in_base_frame.point.z;
 
-
 				recentPointsIndex++;
 
 				// Publish to let us know a point was observed
-
-
 			}
 			else if ( (length > 0) && (recentPointsIndex >= numPoints) ) {
 
@@ -649,7 +638,6 @@ class ClusterExtractor {
 				catch( ... ) {
 					exceptionOccured = true;
 				}
-
 			}
 
 			// Compute the new velocity
@@ -841,7 +829,6 @@ class ClusterExtractor {
 			}
 
 
-
 			/* Describe this method here
 			*/
 			geometry_msgs::Pose findIntersection(double a, double b, double c, arma::mat observedPoint_Plane, arma::mat R_robot_p) {
@@ -889,7 +876,6 @@ class ClusterExtractor {
 					
 				return desiredPose;
 			}
-
 
 
 			/* Describe this method
@@ -1086,7 +1072,6 @@ class ClusterExtractor {
 			}
 
 
-
 			/* Describe this method here
 			 * Input: 
 			 * Return:
@@ -1120,8 +1105,6 @@ class ClusterExtractor {
 
 				return target_pose;
 			}
-
-
 		};
 		
 
