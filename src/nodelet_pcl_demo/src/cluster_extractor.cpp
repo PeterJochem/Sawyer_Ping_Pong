@@ -224,12 +224,18 @@ class ClusterExtractor {
 
 		}
 		
+		 /* Describe this method
+		  */	
 		 void callback(const ros::TimerEvent& event) {
+                        
+			geometry_msgs::Pose desiredPose;
 
                         if ( readyToFit == true ) {
                                 try {
                                         readyToFit = false;
-                                        fitCurve();         
+                                        desiredPose = fitCurve();
+					// Publish the desired pose
+			       		pose_pub.publish(desiredPose);
                                 }
                                 catch( ... ) {
                                 }
@@ -614,7 +620,7 @@ class ClusterExtractor {
 			// Convert between the two frames
 			listener.transformPoint("base", point_in_camera_frame, point_in_base_frame);
 
-			int numPoints = 4;
+			int numPoints = 2;
 
 
 			// Check that the computed point is not the 0 point in the CAMERA's frame
@@ -696,7 +702,7 @@ class ClusterExtractor {
 					// Publish the velocity and positions as a dataPoint
 					dataPoints.publish(currentState);
 
-					pose_pub.publish( computePose(currentState) );
+					// pose_pub.publish( computePose(currentState) );
 				}
 
 			}
@@ -841,6 +847,10 @@ class ClusterExtractor {
 			geometry_msgs::Pose findIntersection(double a, double b, double c, arma::mat observedPoint_Plane, arma::mat R_robot_p) {
 
 				geometry_msgs::Pose desiredPose;	
+				// Set the default to the 0 position
+				desiredPose.position.x = 0.0;
+				desiredPose.position.y = 0.0;
+				desiredPose.position.z = 0.0;
 
 				// The parameters a, b, c describe the parabola   
 				// z = (a)y^2 + (b)y + c
@@ -848,10 +858,11 @@ class ClusterExtractor {
 				// Compute the initial x
 
 				double plane_x = observedPoint_Plane(0, 0);
+				double initial_y = observedPoint_Plane(1, 0); 	
 
-				for (int i = 0; i < 3; i = i + 0.1) {
+				for (int i = -3; i < 3; i = i + 0.1) {
 
-					double newY = i;
+					double newY = i + initial_y;
 					double newZ = predictParabola(a, b, c, newY);	
 
 					// Convert point into the robot's frame 
@@ -867,13 +878,15 @@ class ClusterExtractor {
 					if ( predicted_point_robot_frame(1, 0) > 0 ) {
 
 						// DesiredPose has position and quaterion fields		
-						desiredPose.position.x = plane_x; 
-						desiredPose.position.y = newY;
-						desiredPose.position.z = newZ;
+						desiredPose.position.x = predicted_point_robot_frame(0, 0); 
+						desiredPose.position.y = predicted_point_robot_frame(1, 0);
+						desiredPose.position.z = predicted_point_robot_frame(2, 0);
+						
+						return desiredPose;
 					}						
 				}
-
-
+				
+					
 				return desiredPose;
 			}
 
@@ -1044,7 +1057,8 @@ class ClusterExtractor {
 
 				// Plot the trajectory with markers
 				
-				plotTrajectory( parameters(0, 0), parameters(0, 1), parameters(0, 2), obs_points_plane[recentPointsIndex - 1], inv(R_p_robot) );
+				mat R_robot_p = inv(R_p_robot);
+				plotTrajectory( parameters(0, 0), parameters(0, 1), parameters(0, 2), obs_points_plane[recentPointsIndex - 1], R_robot_p);
 
 				// Figure out where the ball crosses robot's y = 0
 				// Do a line search? Can I transform the normal vector into the plane's frame?
@@ -1066,9 +1080,9 @@ class ClusterExtractor {
 				// Remember to reset!!
 				recentPointsIndex = 0;
 
-				return m;
-				//return findIntersection(parameters(0, 0), parameters(0, 1), parameters(0, 2), 
-				//		obs_points_plane[recentPointsIndex - 1], R_p_robot.t() );
+				// return m;
+				return findIntersection(parameters(0, 0), parameters(0, 1), parameters(0, 2), 
+						obs_points_plane[recentPointsIndex - 1], R_robot_p);
 			}
 
 

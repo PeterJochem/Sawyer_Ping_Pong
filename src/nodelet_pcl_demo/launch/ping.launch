@@ -1,6 +1,6 @@
 <launch> 
 
-  <arg name="vis" default="true" doc="Launch RViZ"/>
+  <arg name="vis" default="false" doc="Launch RViZ"/>
   <arg name="source" default="realsense" doc="Describes the camera we are using"/> 
   <arg name="config" default="true"/>
   <!-- arg name="rviz_config" default="$(find sawyer_moveit_config)/launch/moveit.rviz" / -->

@@ -59,16 +59,20 @@ class MoveArm(object):
         def set_pose(self, data):
                 
             pose_goal = geometry_msgs.msg.Pose()
-            pose_goal.orientation.w = 1.0
+            pose_goal.orientation.x = 0.7
+            pose_goal.orientation.y = 0.0
+            pose_goal.orientation.z = 0.0
+            pose_goal.orientation.w = 0.7
             pose_goal.position.x = data.position.x
             pose_goal.position.y = data.position.y
             pose_goal.position.z = data.position.z
 
             # Add these lines to make the arm move
-            #self.move_group.set_pose_target(pose_goal)
-            #plan = self.move_group.go(wait = True)
+            self.move_group.set_pose_target(pose_goal)
+            plan = self.move_group.go(wait = True)
+            
             # Calling `stop()` ensures that there is no residual movement
-            #self.move_group.stop()
+            self.move_group.stop()
 
             # It is always good to clear your targets after planning with poses.
             # Note: there is no equivalent function for clear_joint_value_targets()
