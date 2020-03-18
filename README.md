@@ -2,11 +2,12 @@
 I set out to have a Sawyer arm play ping pong. I used MoveIt to do the motion planning, an Intel Real Sense camera to capture point clouds, and ROS to integrate all of these parts. 
 
 # Results
-Below is an image from RVIZ. The blue points describe the volume over the ping pong table. The gray points indicate the measured point's position from the point cloud camera. The red points are the parabola I fit (in real time) to the measured position of the ball.   
+Below is an image from RVIZ. The blue points describe the volume over the ping pong table. The gray points indicate the measured point's position from the point cloud camera. The green points are a plane I fit (in real time) to the observed ball's position. The red points are the parabola I fit (in real time to the measured position of the ball.   
 
    
 ![Real Tiem Object Tracking]( https://github.com/PeterJochem/Sawyer_Ping_Pong/blob/master/images/trajectory_1.png "Logo Title Text 1")
-Direct people to look at the image folder - insert link
+
+More videos and images from the system running in RVIZ are available at [I'm an inline-style link](https://github.com/PeterJochem/Sawyer_Ping_Pong/tree/master/images)
 
 
 ## ROS Packages in this Repo
