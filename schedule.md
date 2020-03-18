@@ -23,7 +23,7 @@ Matt helped me solve the point cloud issues. I found a github issue showing that
 
 
 ## Week 7
-Learned the basics of PCL. I browsed Jarvis's point cloud demo and put together a pipeline. My code takes in a point cloud from the camera and computes the centroid of the cloud. This information is then published to other nodes. I set up a node to record the position and the time and then use multiple data points to compute the velocity. I then computed where the ball would cross the plane of contact.
+I learned the basics of PCL. I browsed Jarvis's point cloud demo and put together a pipeline. My code takes in a point cloud from the camera and computes the centroid of the cloud. This information is then published to other nodes. I set up a node to record the position and the time and then use multiple data points to compute the velocity. I then computed where the ball would cross the plane of contact.
 
 
 ## Week 8
