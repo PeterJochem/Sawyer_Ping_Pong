@@ -1,0 +1,92 @@
+<launch> 
+
+  <arg name="vis" default="false" doc="Launch RViZ"/>
+  <arg name="source" default="realsense" doc="Describes the camera we are using"/> 
+  <arg name="config" default="true"/>
+  <!-- arg name="rviz_config" default="$(find sawyer_moveit_config)/launch/moveit.rviz" / -->
+   
+ 	
+  <!-- Load the yaml file in describing the enviroment --> 
+  <arg name="table_description_yaml_file" default="$(find sawyer_ping_pong)/urdf/box.yaml"/>   
+  <rosparam command="load" file="$(arg table_description_yaml_file)"/>  
+	
+  <!-- Load the table's urdf into the param server so we can display it in RVIZ !-->
+  <param name="table_description" textfile="$(find sawyer_ping_pong)/urdf/box.urdf"/> 
+  <param name="robot_description" textfile="/home/peter/Desktop/WinterProject/catkin_ws/src/sawyer_robot/sawyer_description/urdf/sawyer.urdf"/>
+ 
+  <!-- Define the quaternion from the robot's base to the camera -->
+  <arg name="x_camera" default="0.89535" doc="Description"/>
+  <arg name="y_camera" default="-0.88265" doc="Description"/>
+  <arg name="z_camera" default="2.16535" doc="Description"/>
+
+  <arg name="qx_camera" default="1.0" doc="Description"/>
+  <arg name="qy_camera" default="0.0" doc="Description"/>
+  <arg name="qz_camera" default="0" doc="Description"/>
+  <arg name="qw_camera" default="0" doc="Description"/>
+
+  <!-- Define the quaternion from the robot's base to the table -->
+  <arg name="x_table" default="0.4" doc="Description"/>
+  <arg name="y_table" default="-1.0" doc="Description"/>
+  <arg name="z_table" default="0.0" doc="Description"/>
+
+  <arg name="qx_table" default="0.0" doc="Description"/>
+  <arg name="qy_table" default="0.0" doc="Description"/>
+  <arg name="qz_table" default="0.0" doc="Description"/>
+  <arg name="qw_table" default="1.0" doc="Description"/>
+	
+  <!-- static_transform_publisher x y z qx qy qz qw frame_id child_frame_id  period_in_ms -->
+  <node pkg="tf" type="static_transform_publisher" name="base_camera_broadcaster" args="$(arg x_camera) $(arg y_camera) $(arg z_camera) 
+  $(arg qx_camera) $(arg qy_camera) $(arg qz_camera) $(arg qw_camera) base camera_depth_frame 100" />
+
+  <!-- static_transform_publisher x y z qx qy qz qw frame_id child_frame_id  period_in_ms -->
+  <node pkg="tf" type="static_transform_publisher" name="base_table_broadcaster" args="$(arg x_table) $(arg y_table) $(arg z_table) 
+  $(arg qx_table) $(arg qy_table) $(arg qz_table) $(arg qw_table) base table 100" />
+
+  <!-- intel realsense, which publishes on /camera/depth/color/points instead of /camera/depth/points -->
+  <remap from="/camera/depth/color/points" to="/camera/depth/points" />
+
+<include if="$(eval source == 'realsense')" file="$(find realsense2_camera)/launch/rs_camera.launch" >
+       <arg name="filters" value="pointcloud" />
+  </include>
+
+  <!-- launch the nodelet manager -->
+  <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" />  
+
+  
+  <node pkg="nodelet_pcl_demo" name="cluster_extraction" type="cluster_extractor" output="screen" />
+
+  <!-- node pkg="nodelet_pcl_demo" name="myMoveRobot_Node" type="moveRobot" output="screen" / -->
+  
+ <node pkg="nodelet_pcl_demo" name="myMoveRobot_Node" type="moveArm3" output="screen" />
+
+  <!-- start rviz if vis arg is true -->
+   <node pkg="rviz" type="rviz" respawn="false" name="rviz" if="$(arg vis)"
+        args="-d $(find nodelet_pcl_demo)/launch/nodelet_demo.rviz" />
+
+	
+  <param name="table_description" textfile="$(find sawyer_ping_pong)/urdf/box.urdf" />
+
+
+   <!-- MoveIt -->
+     <!--Node for trajectories, used with MoveIt -->
+  <node name="joint_trajectory_action_server" pkg="intera_interface" type="joint_trajectory_action_server.py" output="log"/>
+
+  <include file="$(find sawyer_moveit_config)/launch/planning_context.launch">
+    <arg name="load_robot_description" value="true"/>
+  </include>
+
+   <include file="$(find sawyer_moveit_config)/launch/sawyer_moveit.launch">
+    <arg name="load_robot_description" value="true" />
+  </include>
+
+
+   <!-- include file="$(find sawyer_moveit_config)/launch/moveit_rviz.launch" -->
+    <!-- arg name="config" value="$(arg config)" / -->
+    <!-- arg name="rviz_config" value="$(arg rviz_config)" / --> 
+  <!-- /include -->
+
+ 
+
+
+
+</launch>
