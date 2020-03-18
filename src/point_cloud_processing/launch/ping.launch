@@ -57,11 +57,11 @@
 
   <!-- node pkg="nodelet_pcl_demo" name="myMoveRobot_Node" type="moveRobot" output="screen" / -->
   
- <node pkg="nodelet_pcl_demo" name="myMoveRobot_Node" type="moveArm3" output="screen" />
+ <node pkg="nodelet_pcl_demo" name="myMoveRobot_Node" type="moveArm" output="screen" />
 
   <!-- start rviz if vis arg is true -->
    <node pkg="rviz" type="rviz" respawn="false" name="rviz" if="$(arg vis)"
-        args="-d $(find nodelet_pcl_demo)/launch/nodelet_demo.rviz" />
+        args="-d $(find nodelet_pcl_demo)/launch/ping_pong.rviz" />
 
 	
   <param name="table_description" textfile="$(find sawyer_ping_pong)/urdf/box.urdf" />
