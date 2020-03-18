@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(nodelet_pcl_demo)
+project(point_cloud_processing)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
