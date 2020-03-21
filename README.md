@@ -7,6 +7,8 @@ Below is an image from RVIZ. The blue points describe the volume over the ping p
    
 ![Real Time Object Tracking]( https://github.com/PeterJochem/Sawyer_Ping_Pong/blob/master/images/trajectory_1.png "Logo Title Text 1")
 
+![Real Time Object Tracking]( https://github.com/PeterJochem/Sawyer_Ping_Pong/blob/master/images/trajectory.gif. "Logo Title Text 1")
+
 More videos and images from the system running in RVIZ are available [here](https://github.com/PeterJochem/Sawyer_Ping_Pong/tree/master/images)
 
 # Implementation
