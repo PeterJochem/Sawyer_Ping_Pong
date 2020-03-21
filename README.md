@@ -8,6 +8,7 @@ Below are a few images/gifs from RVIZ. The blue points describe the volume over 
 RVIZ visualization when I threw a tennis ball over the table. The blue spheres represent the volume over the table. The gray spheres represent the measured locations of the ball. The green spheres are the plane that the ball is moving in. The red spheres are the parabola fit to the ball's trajectory
 
 ![Real Time Object Tracking]( https://github.com/PeterJochem/Sawyer_Ping_Pong/blob/master/images/trajectory.gif "Logo Title Text 1")
+
 RVIZ visualization of when I swing a ball on a string through the volume above the table. The green points are the location of the ball inferred from the point cloud data.
 
 More videos and images from the system running in RVIZ are available [here](https://github.com/PeterJochem/Sawyer_Ping_Pong/tree/master/images)
