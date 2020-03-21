@@ -20,7 +20,7 @@ It also has a package called point_cloud_processing which handles setting up and
 
 # How to run My Code
 Download ROS-melodic. Download the .rosinstall file. 
-Run '''wstool init'''
-Run '''wstool set .rosinstall'''
-Run '''wstool update'''
+Run ```wstool init```
+Run ```wstool set .rosinstall```
+Run ```wstool update```
 
