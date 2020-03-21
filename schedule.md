@@ -39,4 +39,4 @@ I struggled with the linear algebra of how to compute where the plane of contact
 
 
 ## Week 11
-I did a lot of cleaning up of my code and documenting
+I did a lot of cleaning up of my code and documenting. Tried to get a vide of the arm hitting the ball but I could not get the arm to move fast enough
